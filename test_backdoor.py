@@ -11,7 +11,7 @@ import datasets
 def get_args():
     parser = argparse.ArgumentParser(description="Train CIFAR-10 models.")
     args = parser.parse_args()
-    args.load_path = r"exps/2022-06-01-1403-cifar10-resnet34/checkpoints/epoch_200.pth"
+    args.load_path = r"exps/test_original/checkpoints/epoch_200.pth"
     args.arch = r""
     return args
 
@@ -30,7 +30,7 @@ def main(args):
     teacher = nets.get_network("cifar10", "resnet34").cuda()
     teacher.load_state_dict(state["teacher"])
     train_bd_dataloader, test_bd_dataloader = datasets.get_bd_dataloader_all(
-        "cifar10", 128, target=1, ratio=0.1
+        "cifar10", batch_size=128, target=1, ratio=0.1
     )
     logger.info("Test backdoor on teacher net")
     teacher_bd_metric = utils.test_backdoor(

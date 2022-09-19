@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # project
-.vscode/
-data/
-exps/
+.vscode
+data
+exps

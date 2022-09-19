@@ -7,7 +7,10 @@ import torch.nn as nn
 import torchvision.models as models
 
 
-def get_network(dataset_name, arch_name):
+def get_network(
+        dataset_name: str, 
+        arch_name: str, 
+        num_classes: int = 1000) -> nn.Module:
     if dataset_name in ("cifar10", "svhn") and arch_name == "resnet18":
         network = resnet_cifar.resnet18()
     elif dataset_name in ("cifar10", "svhn") and arch_name == "resnet34":
@@ -16,7 +19,7 @@ def get_network(dataset_name, arch_name):
         network = vgg_cifar.VGG("VGG16")
     elif dataset_name in ("cifar10", "svhn") and arch_name == "densenet121":
         network = densenet_cifar.DenseNet121()
-    elif dataset_name in ("cifar10", "svhn") and arch_name == "mobilenetv2":
+    elif dataset_name in ("cifar10", "svhn") and arch_name == "mobilenet_v2":
         network = mobilenetv2_cifar.MobileNetV2(num_classes=10)
     elif dataset_name == "cifar100" and arch_name == "resnet18":
         network = resnet_cifar.resnet18(num_classes=100)
@@ -36,8 +39,13 @@ def get_network(dataset_name, arch_name):
         network = models.densenet.densenet121(
             pretrained=False, progress=True, num_classes=200
         )
-    elif dataset_name in ("cifar10", "cifar100", "svhn") and arch_name == "generator":
-        network = generator.TriggerGenerator()
+    elif dataset_name == 'imagenet' and arch_name != "generator":
+        network = getattr(models, arch_name)(pretrained=False, num_classes=num_classes)
+    elif arch_name == "generator":
+        if dataset_name in ("cifar10", "cifar100", "svhn"):
+            network = generator.TriggerGenerator(32)
+        elif dataset_name == 'imagenet':
+            network = generator.TriggerGenerator(224)
     else:
         raise ValueError(
             "arch name {} for {} dataset has not been implemented yet!".format(

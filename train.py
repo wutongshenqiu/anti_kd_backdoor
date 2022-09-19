@@ -64,7 +64,8 @@ def train_backdoor(
     generator_optimizer,
     epoch,
     lambd=0.1,
-    is_train_model=True,
+    lambda_mask: float = 1e-3,
+    is_train_model=True
 ):
     model.eval()
     generator.train()
@@ -89,17 +90,26 @@ def train_backdoor(
         xt = generator(inputs)
         outputs = model(xt)
 
+        if hasattr(generator, 'mask'):
+            mask = generator.mask
+        else:
+            mask = generator.module.mask
+        if hasattr(generator, 'trigger'):
+            trigger = generator.trigger
+        else:
+            trigger = generator.module.trigger
+            
         loss = (
             criterion_ce(outputs, targets) * lambd
-            + torch.norm(generator.mask, 2.0) * 1e-3
+            + torch.norm(mask, 2.0) * lambda_mask
         )
         loss.backward()
 
         if is_train_model:
             optimizer.step()
         generator_optimizer.step()
-        generator.mask.data.clip_(0, 1)
-        generator.trigger.data.clip_(-1, 1)
+        mask.data.clip_(0, 1)
+        trigger.data.clip_(-1, 1)
 
         acc1, acc5 = utils.accuracy(outputs, targets, topk=(1, 5))
 

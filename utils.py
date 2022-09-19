@@ -82,9 +82,7 @@ def config_path(save_path, exp_name):
 
     # Output path
     output_path = os.path.join(save_path, exp_name)
-    if os.path.exists(output_path):
-        raise RuntimeError("Directory {} already exists!".format(output_path))
-    else:
+    if not os.path.exists(output_path):
         os.mkdir(output_path)
 
     # Log path
@@ -108,7 +106,7 @@ def config_path(save_path, exp_name):
 def config_logging(log_path):
     cur_time = datetime.datetime.now().strftime("%Y-%m-%d-%H%M")
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.INFO)
     ch = logging.StreamHandler(stream=sys.stdout)
     fh = logging.FileHandler(
         filename=os.path.join(log_path, "{}.log".format(cur_time)),
@@ -177,7 +175,7 @@ def test_natural(model, dataloader, device, epoch_idx, writer):
     }
 
 
-def test_backdoor(model, generator, dataloader, device, epoch_idx, writer):
+def test_backdoor(model, generator, dataloader, device, epoch_idx, writer=None):
     losses = AverageMeter("Loss", ":.4f")
     top1 = AverageMeter("Acc_1", ":6.2f")
     top5 = AverageMeter("Acc_5", ":6.2f")
