@@ -1,0 +1,59 @@
+import abc
+
+from .mixins import IndexFilterMixin, RatioFilterMixin
+from .types import XY_TYPE
+
+
+class DatasetInterface:
+
+    @abc.abstractmethod
+    def get_xy(self) -> XY_TYPE:
+        ...
+
+    @abc.abstractmethod
+    def set_xy(self, xy: XY_TYPE) -> None:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def num_classes(self) -> int:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def raw_num_classes(self) -> int:
+        ...
+
+
+class IndexDataset(DatasetInterface, IndexFilterMixin):
+
+    def __init__(self, *, start_idx: int, end_idx: int) -> None:
+        self.start_idx = start_idx
+        self.end_idx = end_idx
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_index(xy)
+        self.set_xy(filtered_xy)
+
+
+class RatioDataset(DatasetInterface, RatioFilterMixin):
+
+    def __init__(self, *, ratio: float) -> None:
+        self.ratio = ratio
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_ratio(xy)
+        self.set_xy(filtered_xy)
+
+
+class IndexRatioDataset(DatasetInterface, IndexFilterMixin, RatioFilterMixin):
+
+    def __init__(self, *, start_idx: int, end_idx: int, ratio: float) -> None:
+        self.start_idx = start_idx
+        self.end_idx = end_idx
+        self.ratio = ratio
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_index(xy)
+        filtered_xy = self.filter_by_ratio(filtered_xy)
+        self.set_xy(filtered_xy)
