@@ -10,7 +10,6 @@ packages = [{include = "anti_kd_backdoor"}]
 python = "^3.10"
 torch = "^1.12.1"
 torchvision = "^0.13.1"
-pytorch-lightning = "^1.7.7"
 
 
 [tool.poetry.group.dev.dependencies]
