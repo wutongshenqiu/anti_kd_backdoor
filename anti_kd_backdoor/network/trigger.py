@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+__all__ = ['trigger']
+
 
 class Trigger(nn.Module):
 
@@ -14,3 +16,7 @@ class Trigger(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x: (B, 3, H, W)"""
         return self.mask * self.trigger + (1 - self.mask) * x
+
+
+def trigger(size: int) -> Trigger:
+    return Trigger(size=size)
