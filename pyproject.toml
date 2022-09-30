@@ -10,6 +10,8 @@ packages = [{include = "anti_kd_backdoor"}]
 python = "^3.10"
 torch = "^1.12.1"
 torchvision = "^0.13.1"
+addict = "^2.4.0"
+yapf = "^0.32.0"
 
 
 [tool.poetry.group.dev.dependencies]
