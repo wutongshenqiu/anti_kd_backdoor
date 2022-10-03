@@ -32,7 +32,7 @@ def build_dataset(dataset_cfg: dict) -> DatasetProtocol:
 
     if 'transform' in dataset_cfg:
         transform_list = []
-        transform_list_cfg = dataset_type.pop('transform')
+        transform_list_cfg = dataset_cfg.pop('transform')
         for transform_cfg in transform_list_cfg:
             transform_type = transform_cfg.pop('type')
             transform = getattr(transforms, transform_type)(**transform_cfg)

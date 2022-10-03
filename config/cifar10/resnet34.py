@@ -2,7 +2,7 @@ dataset = 'CIFAR10'
 dataset_mean = (0.4914, 0.4822, 0.4465)
 dataset_std = (0.2023, 0.1994, 0.2010)
 
-network = dict(type='resnet18', arch='cifar')
+network = dict(type='resnet34', arch='cifar', num_classes=10)
 
 test_dataloader = dict(batch_size=64,
                        num_workers=4,
