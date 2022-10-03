@@ -35,6 +35,6 @@ jobs:
         with:
           version: 1.2.1
       - name: Install dependencies
-        run: poetry install --with test
+        run: poetry install --only test
       - name: Run unittests
         run: poetry run pytest tests/
