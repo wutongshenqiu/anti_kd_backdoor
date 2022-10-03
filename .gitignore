@@ -4,3 +4,5 @@ __pycache__
 .venv/*
 data/*
 work_dirs/*
+.python-version
+poetry.lock

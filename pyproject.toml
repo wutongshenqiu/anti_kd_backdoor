@@ -8,8 +8,14 @@ packages = [{include = "anti_kd_backdoor"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-torch = "^1.12.1"
-torchvision = "^0.13.1"
+torch = [
+    {url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp310-cp310-linux_x86_64.whl", markers = "sys_platform == 'linux'"},
+    {url = "https://download.pytorch.org/whl/cpu/torch-1.12.1%2Bcpu-cp310-cp310-win_amd64.whl", markers = "sys_platform == 'win32'"}
+]
+torchvision = [
+    {url = "https://download.pytorch.org/whl/cu116/torchvision-0.13.1%2Bcu116-cp310-cp310-linux_x86_64.whl", markers = "sys_platform == 'linux'"},
+    {url = "https://download.pytorch.org/whl/cpu/torchvision-0.13.1%2Bcpu-cp310-cp310-win_amd64.whl", markers = "sys_platform == 'win32'"}
+]
 addict = "^2.4.0"
 yapf = "^0.32.0"
 
@@ -18,6 +24,17 @@ yapf = "^0.32.0"
 pre-commit = "^2.20.0"
 pytest = "^7.1.3"
 
+
+[tool.poetry.group.test.dependencies]
+python = "^3.10"
+torch = "^1.12.1"
+torchvision = "^0.13.1"
+addict = "^2.4.0"
+yapf = "^0.32.0"
+
+
+[tool.poetry.group.tools.dependencies]
+gpustat = "^1.0.0"
 
 [[tool.poetry.source]]
 name = "tsinghua"

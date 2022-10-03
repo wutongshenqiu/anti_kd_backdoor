@@ -18,7 +18,7 @@ if __name__ == '__main__':
                         '-tk',
                         type=int,
                         nargs='+',
-                        default=1,
+                        default=[1],
                         help='Top k accuracy')
     parser.add_argument('--device',
                         '-d',
@@ -28,6 +28,7 @@ if __name__ == '__main__':
                         help='Device used for testing')
 
     args = parser.parse_args()
+    print(args)
 
     config_path: Path = args.config
     config = Config.fromfile(config_path)
