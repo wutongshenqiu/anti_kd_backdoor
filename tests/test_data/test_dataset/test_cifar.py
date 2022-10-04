@@ -1,34 +1,31 @@
-from pathlib import Path
-
 import numpy as np
 import pytest
 
-from anti_kd_backdoor.data import build_dataset
+from .utils import FakeDataset, build_fake_dataset
 
-CIFAR_HOME = Path('data/cifar')
-CIFAR_TESTSET_NUM = 10000
-CIFAR10_HOME = CIFAR_HOME / 'cifar10'
-CIFAR100_HOME = CIFAR_HOME / 'cifar100'
+CIFAR_TESTSET_NUM = 1000
 
 
-def _get_root(dataset_type: str) -> Path:
+def build_cifar_fake_dataset(dataset_type: str, **kwargs) -> FakeDataset:
     if dataset_type.endswith('CIFAR100'):
-        return CIFAR100_HOME
+        y_range = (0, 99)
+        dataset_type = dataset_type.replace('CIFAR100', 'FakeDataset')
     else:
-        return CIFAR10_HOME
+        y_range = (0, 9)
+        dataset_type = dataset_type.replace('CIFAR10', 'FakeDataset')
 
+    dataset_cfg = dict(type=dataset_type,
+                       x_shape=(3, 32, 32),
+                       y_range=y_range,
+                       nums=CIFAR_TESTSET_NUM,
+                       **kwargs)
 
-def _make_cifar_cfg(dataset_type: str, **kwargs) -> dict:
-    return dict(type=dataset_type,
-                root=_get_root(dataset_type),
-                train=False,
-                download=True,
-                **kwargs)
+    return build_fake_dataset(dataset_cfg)
 
 
 @pytest.mark.parametrize('dataset_type', ['CIFAR10', 'CIFAR100'])
 def test_xy(dataset_type: str) -> None:
-    cifar = build_dataset(_make_cifar_cfg(dataset_type))
+    cifar = build_cifar_fake_dataset(dataset_type)
 
     xy = cifar.get_xy()
     x, y = xy
@@ -57,15 +54,13 @@ def test_xy(dataset_type: str) -> None:
                           (-10, 8, 'IndexCIFAR100'),
                           (40, 50, 'IndexCIFAR100')])
 def test_index(start_idx: int, end_idx: int, dataset_type: str) -> None:
-    kwargs = dict(start_idx=start_idx,
-                  end_idx=end_idx,
-                  **_make_cifar_cfg(dataset_type))
+    kwargs = dict(start_idx=start_idx, end_idx=end_idx)
 
     if start_idx > end_idx:
         with pytest.raises(ValueError):
-            _ = build_dataset(kwargs)
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
         return
-    cifar = build_dataset(kwargs)
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
     assert cifar.start_idx == start_idx
     assert cifar.end_idx == end_idx
 
@@ -84,33 +79,33 @@ def test_index(start_idx: int, end_idx: int, dataset_type: str) -> None:
                                                      (2, 'RatioCIFAR10'),
                                                      (0.4, 'RatioCIFAR100')])
 def test_ratio(ratio: float, dataset_type: str) -> None:
-    kwargs = dict(ratio=ratio, **_make_cifar_cfg(dataset_type))
+    kwargs = dict(ratio=ratio)
 
     if ratio <= 0 or ratio > 1:
         with pytest.raises(ValueError):
-            _ = build_dataset(kwargs)
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
         return
-    cifar = build_dataset(kwargs)
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
 
     assert len(cifar.targets) == \
         int(CIFAR_TESTSET_NUM / cifar.num_classes * ratio) * cifar.num_classes
 
 
+@pytest.mark.parametrize('dataset_type',
+                         ['IndexRatioCIFAR10', 'IndexRatioCIFAR100'])
 @pytest.mark.parametrize(['start_idx', 'end_idx', 'ratio'], [(4, 3, 0.5),
                                                              (3, 4, 0),
                                                              (3, 4, 2),
                                                              (1, 4, 0.1)])
-def test_index_ratio(start_idx: int, end_idx: int, ratio: float) -> None:
-    kwargs = dict(start_idx=start_idx,
-                  end_idx=end_idx,
-                  ratio=ratio,
-                  **_make_cifar_cfg('IndexRatioCIFAR10'))
+def test_index_ratio(start_idx: int, end_idx: int, ratio: float,
+                     dataset_type: str) -> None:
+    kwargs = dict(start_idx=start_idx, end_idx=end_idx, ratio=ratio)
 
     if ratio <= 0 or ratio > 1 or start_idx > end_idx:
         with pytest.raises(ValueError):
-            _ = build_dataset(kwargs)
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
         return
-    cifar = build_dataset(kwargs)
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
     assert cifar.start_idx == start_idx
     assert cifar.end_idx == end_idx
 
