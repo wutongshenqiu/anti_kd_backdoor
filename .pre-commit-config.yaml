@@ -27,6 +27,14 @@ repos:
         args: ["--remove"]
       - id: mixed-line-ending
         args: ["--fix=lf"]
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.16
+    hooks:
+      - id: mdformat
+        args: ["--number"]
+        additional_dependencies:
+          - mdformat_frontmatter
+          - linkify-it-py
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.1
     hooks:
