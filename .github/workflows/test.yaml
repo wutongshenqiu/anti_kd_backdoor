@@ -53,7 +53,7 @@ jobs:
           path: data
           key: data-${{ runner.os }}-${{ hashFiles('data/meta.json') }}
       - name: Download data
-      - if: steps.cached-data.outputs.cache-hit != 'true'
+        if: steps.cached-data.outputs.cache-hit != 'true'
         run: poetry run tools/download_dataset.py
       - name: Run unittests
         run: poetry run pytest tests/
