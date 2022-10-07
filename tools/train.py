@@ -3,9 +3,7 @@ from pathlib import Path
 import torch
 
 from anti_kd_backdoor.config import Config
-from anti_kd_backdoor.data import build_dataloader
-from anti_kd_backdoor.network import build_network
-from anti_kd_backdoor.utils import evaluate_accuracy
+from anti_kd_backdoor.trainer import build_trainer
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -25,12 +23,5 @@ if __name__ == '__main__':
     config_path: Path = args.config
     config = Config.fromfile(config_path)
 
-    model = build_network(config.network)
-
-    test_dataloader = build_dataloader(config.test_dataloader)
-
-    print(
-        evaluate_accuracy(model,
-                          test_dataloader,
-                          device=args.device,
-                          top_k_list=args.topk))
+    trainer = build_trainer(config.trainer)
+    trainer.train()
