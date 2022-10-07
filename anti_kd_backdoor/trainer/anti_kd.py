@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import functools
+import json
+from pathlib import Path
 from typing import Any, Optional
 
 import torch
+import tqdm
 from torch import optim
 from torch.nn import Module
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from anti_kd_backdoor.data import build_dataloader
 from anti_kd_backdoor.network import build_network
 from anti_kd_backdoor.utils import (AverageMeter, build_optimizer,
                                     build_scheduler, calc_batch_acc,
-                                    evaluate_accuracy)
+                                    collect_hyperparameters, evaluate_accuracy)
 
 
 # TODO: Name is not proper
@@ -97,13 +101,27 @@ class NetworkWrapper(BaseWrapper):
         return super().build_from_cfg(cfg)
 
 
+# TODO: inherit `BaseTrainer`
 class AntiKDTrainer:
 
-    def __init__(self, *, teacher: dict, students: dict[str, dict],
-                 trigger: dict, clean_train_dataloader: dict,
-                 clean_test_dataloader: dict, poison_train_dataloader: dict,
-                 poison_test_dataloader: dict, epochs: int, save_interval: int,
-                 temperature: float, alpha: float, device: str) -> None:
+    def __init__(self,
+                 *,
+                 teacher: dict,
+                 students: dict[str, dict],
+                 trigger: dict,
+                 clean_train_dataloader: dict,
+                 clean_test_dataloader: dict,
+                 poison_train_dataloader: dict,
+                 poison_test_dataloader: dict,
+                 epochs: int,
+                 save_interval: int,
+                 temperature: float,
+                 alpha: float,
+                 device: str,
+                 epochs_per_validation: int = 5,
+                 work_dirs: Optional[str | Path] = None) -> None:
+        hyperparameters = collect_hyperparameters()
+
         self._teacher_wrapper = NetworkWrapper.build_from_cfg(teacher)
         self._student_wrappers = {
             k: NetworkWrapper.build_from_cfg(v)
@@ -123,40 +141,88 @@ class AntiKDTrainer:
         self._temperature = temperature
         self._alpha = alpha
         self._device = device
+        self._epochs_per_validation = epochs_per_validation
+
+        if work_dirs is not None:
+            self._work_dirs = Path(work_dirs)
+            self._log_dir = self._work_dirs / 'logs'
+            self._tb_writer = SummaryWriter(log_dir=self._log_dir)
+
+            hyperparameters['work_dirs'] = str(hyperparameters['work_dirs'])
+            with (self._work_dirs / 'hparams.json').open('w',
+                                                         encoding='utf8') as f:
+                f.write(json.dumps(hyperparameters))
+        else:
+            self._tb_writer = None
+
+        self._current_epoch = 0
 
     def train(self) -> None:
+        pbar = tqdm.tqdm(total=self._epochs)
+
+        while self._current_epoch < self._epochs:
+            self._current_epoch += 1
+
+            self.before_train_epoch()
+            self.train_epoch()
+            self.after_train_epoch()
+
+            if self._current_epoch == 1 or \
+                    self._current_epoch % self._epochs_per_validation == 0:
+                self.validation()
+
+            pbar.update(1)
+
+    def before_train_epoch(self) -> None:
+        ...
+
+    def train_epoch(self) -> None:
         # 1. train trigger for teacher network with poison data
-        _ = self._train_trigger(network_wrapper=self._teacher_wrapper,
-                                trigger_wrapper=self._trigger_wrapper,
-                                dataloader=self._poison_train_dataloader,
-                                device=self._device)
+        tag_scalar_dict = self._train_trigger(
+            network_wrapper=self._teacher_wrapper,
+            trigger_wrapper=self._trigger_wrapper,
+            dataloader=self._poison_train_dataloader,
+            device=self._device)
+        if self._tb_writer is not None:
+            self._tb_writer.add_scalars('Trigger training with teacher',
+                                        tag_scalar_dict, self._current_epoch)
 
         # 2. train trigger for student network with poison data
-        for _, s_wrapper in self._student_wrappers.items():
-            _ = self._train_trigger(network_wrapper=s_wrapper,
-                                    trigger_wrapper=self._trigger_wrapper,
-                                    dataloader=self._poison_train_dataloader,
-                                    device=self._device)
+        for s_name, s_wrapper in self._student_wrappers.items():
+            tag_scalar_dict = self._train_trigger(
+                network_wrapper=s_wrapper,
+                trigger_wrapper=self._trigger_wrapper,
+                dataloader=self._poison_train_dataloader,
+                device=self._device)
+            if self._tb_writer is not None:
+                self._tb_writer.add_scalars(
+                    f'Trigger training with student {s_name}', tag_scalar_dict,
+                    self._current_epoch)
 
         # 3. train teacher network with clean data
-        _ = self._train_network(network_wrapper=self._teacher_wrapper,
-                                dataloader=self._clean_train_dataloader,
-                                device=self._device)
+        tag_scalar_dict = self._train_network(
+            network_wrapper=self._teacher_wrapper,
+            dataloader=self._clean_train_dataloader,
+            device=self._device)
+        if self._tb_writer is not None:
+            self._tb_writer.add_scalars('Teacher training on clean data',
+                                        tag_scalar_dict, self._current_epoch)
 
         # 4. train student network with knowledge distillation
-        for _, s_wrapper in self._student_wrappers.items():
-            _ = self._train_kd(teacher_wrapper=self._teacher_wrapper,
-                               student_wrapper=s_wrapper,
-                               dataloader=self._clean_train_dataloader,
-                               temperature=self._temperature,
-                               alpha=self._alpha,
-                               device=self._device)
+        for s_name, s_wrapper in self._student_wrappers.items():
+            tag_scalar_dict = self._train_kd(
+                teacher_wrapper=self._teacher_wrapper,
+                student_wrapper=s_wrapper,
+                dataloader=self._clean_train_dataloader,
+                temperature=self._temperature,
+                alpha=self._alpha,
+                device=self._device)
+            if self._tb_writer is not None:
+                self._tb_writer.add_scalars(
+                    f'Student {s_name} training with kd', tag_scalar_dict,
+                    self._current_epoch)
 
-        # operation after training
-        self.after_train()
-        self.validation()
-
-    def after_train(self) -> None:
+    def after_train_epoch(self) -> None:
         # Step schedulers
         if (t_scheduler := self._teacher_wrapper.scheduler) is not None:
             t_scheduler.step()
@@ -165,18 +231,47 @@ class AntiKDTrainer:
             if (s_scheduler := s_wrapper.scheduler) is not None:
                 s_scheduler.step()
 
+        # log learning rate
+        if self._tb_writer is not None:
+            teacher_lr = {
+                type(self._teacher_wrapper.network).__name__.lower():
+                self._teacher_wrapper.optimizer.param_groups[0]['lr']
+            }
+            students_lr = {
+                k: v.optimizer.param_groups[0]['lr']
+                for k, v in self._student_wrappers.items()
+            }
+            trigger_lr = {
+                'trigger':
+                self._trigger_wrapper.optimizer.param_groups[0]['lr']
+            }
+            self._tb_writer.add_scalars('Learning rate', {
+                **teacher_lr,
+                **students_lr,
+                **trigger_lr
+            }, self._current_epoch)
+
     def validation(self) -> None:
         # acc of clean test data on teacher & student
-        _ = evaluate_accuracy(model=self._teacher_wrapper.network,
-                              dataloader=self._clean_test_dataloader,
-                              device=self._device,
-                              top_k_list=(1, 5))
+        tag_scalar_dict = evaluate_accuracy(
+            model=self._teacher_wrapper.network,
+            dataloader=self._clean_test_dataloader,
+            device=self._device,
+            top_k_list=(1, 5))
+        if self._tb_writer is not None:
+            self._tb_writer.add_scalars('Teacher validation on clean data',
+                                        tag_scalar_dict, self._current_epoch)
 
-        for _, s_wrapper in self._student_wrappers.items():
-            _ = evaluate_accuracy(model=s_wrapper.network,
-                                  dataloader=self._clean_test_dataloader,
-                                  device=self._device,
-                                  top_k_list=(1, 5))
+        for s_name, s_wrapper in self._student_wrappers.items():
+            tag_scalar_dict = evaluate_accuracy(
+                model=s_wrapper.network,
+                dataloader=self._clean_test_dataloader,
+                device=self._device,
+                top_k_list=(1, 5))
+            if self._tb_writer is not None:
+                self._tb_writer.add_scalars(
+                    f'Student {s_name} validation on clean data',
+                    tag_scalar_dict, self._current_epoch)
 
         # asr of poison test data on teacher & student
         evaluate_asr = functools.partial(
@@ -186,9 +281,17 @@ class AntiKDTrainer:
             device=self._device,
             top_k_list=(1, 5))
 
-        _ = evaluate_asr(model=self._teacher_wrapper.network)
-        for _, s_wrapper in self._student_wrappers.items():
-            _ = evaluate_asr(model=s_wrapper.network)
+        tag_scalar_dict = evaluate_asr(model=self._teacher_wrapper.network)
+        if self._tb_writer is not None:
+            self._tb_writer.add_scalars('Teacher validation on poison data',
+                                        tag_scalar_dict, self._current_epoch)
+
+        for s_name, s_wrapper in self._student_wrappers.items():
+            tag_scalar_dict = evaluate_asr(model=s_wrapper.network)
+            if self._tb_writer is not None:
+                self._tb_writer.add_scalars(
+                    f'Student {s_name} validation on poison data',
+                    tag_scalar_dict, self._current_epoch)
 
     @staticmethod
     def _train_trigger(network_wrapper: NetworkWrapper,
@@ -216,9 +319,10 @@ class AntiKDTrainer:
         network.to(device)
         trigger.to(device)
 
-        loss_meter = AverageMeter(name='train loss')
-        top1_meter = AverageMeter(name='top1 acc')
-        top5_meter = AverageMeter(name='top5 acc')
+        loss_t_meter = AverageMeter(name='loss_t')
+        loss_mask_meter = AverageMeter(name='loss_mask')
+        top1_meter = AverageMeter(name='top1_acc')
+        top5_meter = AverageMeter(name='top5_acc')
 
         for x, y in dataloader:
             x = x.to(device)
@@ -245,15 +349,17 @@ class AntiKDTrainer:
                 trigger.trigger.clip_(*trigger_clip_range)
 
             batch_size = x.size(0)
-            loss_meter.update(loss.item(), batch_size)
+            loss_t_meter.update(loss_t.item(), batch_size)
+            loss_mask_meter.update(loss_mask.item(), batch_size)
             top1_acc, top5_acc = calc_batch_acc(logits_p, y, (1, 5))
             top1_meter.update(top1_acc, batch_size)
             top5_meter.update(top5_acc, batch_size)
 
         return {
-            'train loss': loss_meter.avg,
-            'top1 acc': top1_meter.avg,
-            'top5 acc': top5_meter.avg
+            'loss_t': loss_t_meter.avg,
+            'loss_mask': loss_mask_meter.avg,
+            'top1_acc': top1_meter.avg,
+            'top5_acc': top5_meter.avg
         }
 
     @staticmethod
@@ -265,9 +371,9 @@ class AntiKDTrainer:
         network.train()
         network.to(device)
 
-        loss_meter = AverageMeter(name='train loss')
-        top1_meter = AverageMeter(name='top1 acc')
-        top5_meter = AverageMeter(name='top5 acc')
+        loss_meter = AverageMeter(name='loss')
+        top1_meter = AverageMeter(name='top1_acc')
+        top5_meter = AverageMeter(name='top5_acc')
 
         for x, y in dataloader:
             x = x.to(device)
@@ -287,9 +393,9 @@ class AntiKDTrainer:
             top5_meter.update(top5_acc, batch_size)
 
         return {
-            'train loss': loss_meter.avg,
-            'top1 acc': top1_meter.avg,
-            'top5 acc': top5_meter.avg
+            'loss': loss_meter.avg,
+            'top1_acc': top1_meter.avg,
+            'top5_acc': top5_meter.avg
         }
 
     @staticmethod
@@ -307,10 +413,10 @@ class AntiKDTrainer:
         teacher.to(device)
         student.to(device)
 
-        soft_loss_meter = AverageMeter(name='soft loss')
-        hard_loss_meter = AverageMeter(name='hard loss')
-        top1_meter = AverageMeter(name='top1 acc')
-        top5_meter = AverageMeter(name='top5 acc')
+        soft_loss_meter = AverageMeter(name='soft_loss')
+        hard_loss_meter = AverageMeter(name='hard_loss')
+        top1_meter = AverageMeter(name='top1_acc')
+        top5_meter = AverageMeter(name='top5_acc')
 
         for x, y in dataloader:
             x = x.to(device)
@@ -340,8 +446,8 @@ class AntiKDTrainer:
             top5_meter.update(top5_acc, batch_size)
 
         return {
-            'soft loss': soft_loss_meter.avg,
-            'hard loss': hard_loss_meter.avg,
-            'top1 acc': top1_meter.avg,
-            'top5 acc': top5_meter.avg
+            'soft_loss': soft_loss_meter.avg,
+            'hard_loss': hard_loss_meter.avg,
+            'top1_acc': top1_meter.avg,
+            'top5_acc': top5_meter.avg
         }

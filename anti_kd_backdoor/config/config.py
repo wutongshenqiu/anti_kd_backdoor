@@ -32,7 +32,11 @@ class Config:
 
     valid_suffix = {'.py'}
 
-    def __init__(self, cfg_dict: Optional[dict | ConfigDict] = None) -> None:
+    def __init__(self,
+                 cfg_dict: Optional[dict | ConfigDict] = None,
+                 filename: Optional[str | Path] = None) -> None:
+        if isinstance(filename, Path):
+            filename = str(filename)
         if cfg_dict is None:
             cfg_dict = dict()
         if isinstance(cfg_dict, dict):
@@ -40,6 +44,7 @@ class Config:
         assert isinstance(cfg_dict, ConfigDict)
 
         super().__setattr__('_cfg_dict', cfg_dict)
+        super().__setattr__('_filename', filename)
 
     @classmethod
     def fromfile(cls, config_path: str | Path) -> Config:
@@ -63,10 +68,10 @@ class Config:
                                                          ModuleType)))
         }
 
-        return cls(cfg_dict=cfg_dict)
+        return cls(cfg_dict=cfg_dict, filename=str(config_path))
 
     def __repr__(self):
-        return self._cfg_dict.__repr__()
+        return f'Config (path: {self.filename}): {self._cfg_dict.__repr__()}'
 
     def __len__(self):
         return len(self._cfg_dict)

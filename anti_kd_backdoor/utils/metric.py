@@ -37,7 +37,7 @@ def evaluate_accuracy(
         dataloader: DataLoader,
         device: str | torch.device = 'cuda',
         top_k_list: Sequence[int] = [1],
-        before_forward_fn: Optional[Callable] = None) -> list[float]:
+        before_forward_fn: Optional[Callable] = None) -> dict[str, float]:
     # HACK
     is_model_training = model.training
 
@@ -62,4 +62,8 @@ def evaluate_accuracy(
         model.train()
 
     dataset_len = len(dataloader.dataset)
-    return [correct / dataset_len for correct in correct_list]
+
+    return {
+        f'top{k}': v / dataset_len
+        for k, v in zip(top_k_list, correct_list)
+    }

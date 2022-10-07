@@ -12,7 +12,7 @@ class CIFAR10(TORCH_CIFAR10, DatasetInterface):
     targets: list[int]
 
     def get_xy(self) -> XY_TYPE:
-        return self.data.tolist(), self.targets.copy()
+        return list(self.data), self.targets.copy()
 
     def set_xy(self, xy: XY_TYPE):
         x, y = xy

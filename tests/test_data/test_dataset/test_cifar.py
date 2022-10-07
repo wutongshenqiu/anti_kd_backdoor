@@ -45,6 +45,7 @@ def test_xy(dataset_type: str) -> None:
     assert np.equal(cifar.data, x).all()
     assert cifar.targets == y
     assert cifar.num_classes == len(set(y))
+    assert len(cifar.data.shape) == 4
 
 
 @pytest.mark.parametrize(['start_idx', 'end_idx', 'dataset_type'],
@@ -69,6 +70,7 @@ def test_index(start_idx: int, end_idx: int, dataset_type: str) -> None:
 
     assert cifar.num_classes == min(
         cifar.end_idx, cifar.raw_num_classes - 1) - max(cifar.start_idx, 0) + 1
+    assert len(cifar.data.shape) == 4
 
 
 @pytest.mark.parametrize(['ratio', 'dataset_type'], [(-1, 'RatioCIFAR10'),
@@ -89,6 +91,7 @@ def test_ratio(ratio: float, dataset_type: str) -> None:
 
     assert len(cifar.targets) == \
         int(CIFAR_TESTSET_NUM / cifar.num_classes * ratio) * cifar.num_classes
+    assert len(cifar.data.shape) == 4
 
 
 @pytest.mark.parametrize('dataset_type',
@@ -113,6 +116,7 @@ def test_index_ratio(start_idx: int, end_idx: int, ratio: float,
         assert start_idx <= y <= end_idx
     assert len(cifar.targets) == \
         cifar.num_classes / cifar.raw_num_classes * CIFAR_TESTSET_NUM * ratio
+    assert len(cifar.data.shape) == 4
 
 
 @pytest.mark.parametrize('dataset_type',
@@ -130,6 +134,7 @@ def test_poison_label(poison_label: int, dataset_type: str) -> None:
 
     assert cifar.num_classes == 1
     assert all(map(lambda x: x == poison_label, cifar.targets))
+    assert len(cifar.data.shape) == 4
 
 
 @pytest.mark.parametrize(
@@ -151,3 +156,4 @@ def test_ratio_poison_label(ratio: float, poison_label: int,
     assert len(cifar) == CIFAR_TESTSET_NUM * ratio
     assert cifar.num_classes == 1
     assert all(map(lambda x: x == poison_label, cifar.targets))
+    assert len(cifar.data.shape) == 4

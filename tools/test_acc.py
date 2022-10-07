@@ -33,13 +33,14 @@ if __name__ == '__main__':
     config_path: Path = args.config
     config = Config.fromfile(config_path)
 
-    model = build_network(config.network)
+    model = build_network(config.trainer.teacher.network)
+    print(model)
 
     ckpt = torch.load(args.checkpoint, map_location='cpu')['teacher']
     utils.consume_prefix_in_state_dict_if_present(ckpt, 'module.')
 
     model.load_state_dict(ckpt)
-    test_dataloader = build_dataloader(config.test_dataloader)
+    test_dataloader = build_dataloader(config.trainer.clean_test_dataloader)
 
     print(
         evaluate_accuracy(model,
