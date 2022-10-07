@@ -1,3 +1,5 @@
+import typing
+
 from .types import XY_TYPE
 
 
@@ -49,3 +51,19 @@ class RatioFilterMixin:
                 filtered_y.append(ity)
 
         return filtered_x, filtered_y
+
+
+# TODO: name
+class PoisonLabelMixin:
+    poison_label: int
+
+    @typing.no_type_check
+    def to_target_label(self, xy: XY_TYPE) -> XY_TYPE:
+        if not (0 <= self.poison_label < self.raw_num_classes):
+            raise ValueError(
+                '`target` must between 0 and '
+                f'{self.raw_num_classes - 1}, but got {self.poison_label}')
+
+        x, _ = xy
+
+        return x.copy(), [self.poison_label] * len(x)

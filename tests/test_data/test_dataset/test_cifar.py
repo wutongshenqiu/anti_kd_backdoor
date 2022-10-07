@@ -113,3 +113,41 @@ def test_index_ratio(start_idx: int, end_idx: int, ratio: float,
         assert start_idx <= y <= end_idx
     assert len(cifar.targets) == \
         cifar.num_classes / cifar.raw_num_classes * CIFAR_TESTSET_NUM * ratio
+
+
+@pytest.mark.parametrize('dataset_type',
+                         ['PoisonLabelCIFAR10', 'PoisonLabelCIFAR100'])
+@pytest.mark.parametrize('poison_label', [-1, 5, 101])
+def test_poison_label(poison_label: int, dataset_type: str) -> None:
+    kwargs = dict(poison_label=poison_label)
+
+    if poison_label < 0 or poison_label >= 100:
+        with pytest.raises(ValueError):
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
+        return
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
+    assert cifar.poison_label == poison_label
+
+    assert cifar.num_classes == 1
+    assert all(map(lambda x: x == poison_label, cifar.targets))
+
+
+@pytest.mark.parametrize(
+    'dataset_type', ['RatioPoisonLabelCIFAR10', 'RatioPoisonLabelCIFAR100'])
+@pytest.mark.parametrize('poison_label', [-1, 5, 101])
+@pytest.mark.parametrize('ratio', [0, 0.2, 1, 1.2])
+def test_ratio_poison_label(ratio: float, poison_label: int,
+                            dataset_type: str) -> None:
+    kwargs = dict(ratio=ratio, poison_label=poison_label)
+
+    if (poison_label < 0 or poison_label >= 100) or \
+            (ratio <= 0 or ratio > 1):
+        with pytest.raises(ValueError):
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
+        return
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
+    assert cifar.poison_label == poison_label
+
+    assert len(cifar) == CIFAR_TESTSET_NUM * ratio
+    assert cifar.num_classes == 1
+    assert all(map(lambda x: x == poison_label, cifar.targets))

@@ -42,7 +42,7 @@ class BaseWrapper(Module):
         network_cfg = cfg.pop('network')
         network: Module = build_network(network_cfg)
 
-        optimizer_cfg = cfg.pop('optimizer_cfg')
+        optimizer_cfg = cfg.pop('optimizer')
         optimizer: optim.Optimizer = build_optimizer(
             params=network.parameters(), optimizer_cfg=optimizer_cfg)
 
@@ -52,7 +52,11 @@ class BaseWrapper(Module):
             scheduler = build_scheduler(optimizer=optimizer,
                                         scheduler_cfg=scheduler_cfg)
 
-        return cls(network=network, optimizer=optimizer, scheduler=scheduler)
+        # HACK: inconsistent with `__init__` signature
+        return cls(network=network,
+                   optimizer=optimizer,
+                   scheduler=scheduler,
+                   **cfg)
 
 
 class TriggerWrapper(BaseWrapper):

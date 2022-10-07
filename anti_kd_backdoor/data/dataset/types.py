@@ -21,8 +21,10 @@ class DatasetProtocol(Protocol):
     def set_xy(self, xy: XY_TYPE) -> None:
         ...
 
+    @property
     def num_classes(self) -> int:
         ...
 
+    @property
     def raw_num_classes(self) -> int:
         ...

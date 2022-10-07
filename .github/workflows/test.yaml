@@ -46,5 +46,14 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --without tools
+      - name: Load cached data
+        id: cached-data
+        uses: actions/cache@v3
+        with:
+          path: data
+          key: data-${{ runner.os }}-${{ hashFiles('data/meta.json') }}
+      - name: Download data
+      - if: steps.cached-data.outputs.cache-hit != 'true'
+        run: poetry run tools/download_dataset.py
       - name: Run unittests
         run: poetry run pytest tests/

@@ -4,7 +4,9 @@ from torch.utils.data import Dataset
 
 from anti_kd_backdoor.data.dataset.base import (DatasetInterface, IndexDataset,
                                                 IndexRatioDataset,
-                                                RatioDataset)
+                                                PoisonLabelDataset,
+                                                RatioDataset,
+                                                RatioPoisonLabelDataset)
 from anti_kd_backdoor.data.dataset.types import XY_TYPE
 
 
@@ -29,7 +31,7 @@ class FakeDataset(DatasetInterface, Dataset):
         self.targets.extend([y_range[0]] * (nums - len(self.targets)))
 
     def __len__(self) -> int:
-        self._nums
+        return len(self.targets)
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.data[index]
@@ -81,11 +83,29 @@ class IndexRatioFakeDataset(FakeDataset, IndexRatioDataset):
                                    ratio=ratio)
 
 
+class PoisonLabelFakeDataset(FakeDataset, PoisonLabelDataset):
+
+    def __init__(self, *, poison_label: int, **kwargs) -> None:
+        FakeDataset.__init__(self, **kwargs)
+        PoisonLabelDataset.__init__(self, poison_label=poison_label)
+
+
+class RatioPoisonLabelFakeDataset(FakeDataset, RatioPoisonLabelDataset):
+
+    def __init__(self, *, ratio: float, poison_label: int, **kwargs) -> None:
+        FakeDataset.__init__(self, **kwargs)
+        RatioPoisonLabelDataset.__init__(self,
+                                         ratio=ratio,
+                                         poison_label=poison_label)
+
+
 FAKE_DATASETS_MAPPING = {
     'FakeDataset': FakeDataset,
     'IndexFakeDataset': IndexFakeDataset,
     'RatioFakeDataset': RatioFakeDataset,
-    'IndexRatioFakeDataset': IndexRatioFakeDataset
+    'IndexRatioFakeDataset': IndexRatioFakeDataset,
+    'PoisonLabelFakeDataset': PoisonLabelFakeDataset,
+    'RatioPoisonLabelFakeDataset': RatioPoisonLabelFakeDataset
 }
 
 

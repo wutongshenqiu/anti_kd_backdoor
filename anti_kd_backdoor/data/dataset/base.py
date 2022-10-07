@@ -1,6 +1,6 @@
 import abc
 
-from .mixins import IndexFilterMixin, RatioFilterMixin
+from .mixins import IndexFilterMixin, PoisonLabelMixin, RatioFilterMixin
 from .types import XY_TYPE
 
 
@@ -56,4 +56,27 @@ class IndexRatioDataset(DatasetInterface, IndexFilterMixin, RatioFilterMixin):
         xy = self.get_xy()
         filtered_xy = self.filter_by_index(xy)
         filtered_xy = self.filter_by_ratio(filtered_xy)
+        self.set_xy(filtered_xy)
+
+
+class PoisonLabelDataset(DatasetInterface, PoisonLabelMixin):
+
+    def __init__(self, *, poison_label: int) -> None:
+        self.poison_label = poison_label
+
+        xy = self.get_xy()
+        filtered_xy = self.to_target_label(xy)
+        self.set_xy(filtered_xy)
+
+
+class RatioPoisonLabelDataset(DatasetInterface, RatioFilterMixin,
+                              PoisonLabelMixin):
+
+    def __init__(self, *, ratio: float, poison_label: int) -> None:
+        self.ratio = ratio
+        self.poison_label = poison_label
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_ratio(xy)
+        filtered_xy = self.to_target_label(filtered_xy)
         self.set_xy(filtered_xy)

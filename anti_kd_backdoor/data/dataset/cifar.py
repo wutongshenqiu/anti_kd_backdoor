@@ -3,7 +3,7 @@ from torchvision.datasets import CIFAR10 as TORCH_CIFAR10
 from torchvision.datasets import CIFAR100 as TORCH_CIFAR100
 
 from .base import (DatasetInterface, IndexDataset, IndexRatioDataset,
-                   RatioDataset)
+                   PoisonLabelDataset, RatioDataset, RatioPoisonLabelDataset)
 from .types import XY_TYPE
 
 
@@ -55,6 +55,22 @@ class IndexRatioCIFAR10(CIFAR10, IndexRatioDataset):
                                    ratio=ratio)
 
 
+class PoisonLabelCIFAR10(CIFAR10, PoisonLabelDataset):
+
+    def __init__(self, *, poison_label: int, **kwargs) -> None:
+        CIFAR10.__init__(self, **kwargs)
+        PoisonLabelDataset.__init__(self, poison_label=poison_label)
+
+
+class RatioPoisonLabelCIFAR10(CIFAR10, RatioPoisonLabelDataset):
+
+    def __init__(self, *, ratio: float, poison_label: int, **kwargs) -> None:
+        CIFAR10.__init__(self, **kwargs)
+        RatioPoisonLabelDataset.__init__(self,
+                                         ratio=ratio,
+                                         poison_label=poison_label)
+
+
 class CIFAR100(CIFAR10, TORCH_CIFAR100):
 
     @property
@@ -85,3 +101,19 @@ class IndexRatioCIFAR100(CIFAR100, IndexRatioDataset):
                                    start_idx=start_idx,
                                    end_idx=end_idx,
                                    ratio=ratio)
+
+
+class PoisonLabelCIFAR100(CIFAR100, PoisonLabelDataset):
+
+    def __init__(self, *, poison_label: int, **kwargs) -> None:
+        CIFAR100.__init__(self, **kwargs)
+        PoisonLabelDataset.__init__(self, poison_label=poison_label)
+
+
+class RatioPoisonLabelCIFAR100(CIFAR100, RatioPoisonLabelDataset):
+
+    def __init__(self, *, ratio: float, poison_label: int, **kwargs) -> None:
+        CIFAR100.__init__(self, **kwargs)
+        RatioPoisonLabelDataset.__init__(self,
+                                         ratio=ratio,
+                                         poison_label=poison_label)
