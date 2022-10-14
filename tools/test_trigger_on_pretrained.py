@@ -5,6 +5,8 @@ from typing import Any
 
 import torch
 from torch.nn import Module
+from torch.utils.data import DataLoader
+from torchvision.utils import make_grid, save_image
 
 from anti_kd_backdoor.data import build_dataloader
 from anti_kd_backdoor.network import build_network
@@ -67,6 +69,41 @@ def load_trigger(work_dir: Path) -> Module:
     return trigger
 
 
+def get_sub_data(dataloader: DataLoader, num: int = 100) -> torch.Tensor:
+    remaining = num
+
+    batch_data_list = []
+    for x, _ in dataloader:
+        batch_size = x.size(0)
+        if remaining < batch_size:
+            x = x[:remaining]
+            batch_size = remaining
+        remaining -= batch_size
+        batch_data_list.append(x)
+
+        if remaining <= 0:
+            break
+
+    return torch.cat(batch_data_list)
+
+
+def parse_mean_and_std(
+        dataset_cfg: dict[str, Any]) -> tuple[torch.Tensor, torch.Tensor]:
+    mean = [0., 0., 0.]
+    std = [1., 1., 1.]
+
+    if (transform_cfg_list := dataset_cfg.get('transform')) is not None:
+        for transform_cfg in transform_cfg_list:
+            if transform_cfg['type'] == 'Normalize':
+                mean = transform_cfg['mean']
+                std = transform_cfg['std']
+
+    mean_tensor = torch.tensor(mean).view(-1, 1, 1)
+    std_tensor = torch.tensor(std).view(-1, 1, 1)
+
+    return mean_tensor, std_tensor
+
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
@@ -101,11 +138,17 @@ if __name__ == '__main__':
                         nargs='+',
                         default=[1, 5],
                         help='Top k accuracy')
-    parser.add_argument('--result_dir',
+    parser.add_argument('--transparencies',
+                        '-t',
+                        type=float,
+                        nargs='+',
+                        default=[1.],
+                        help='Transparencies of mask')
+    parser.add_argument('--results_dir',
                         '-s',
                         type=Path,
                         help='Directory of saving results',
-                        default='work_dirs/result')
+                        default='work_dirs/results')
 
     args = parser.parse_args()
     print(args)
@@ -134,9 +177,9 @@ if __name__ == '__main__':
         source = 'github'
         repo_or_dir = args.repo_name
 
-    result_dir = args.result_dir
-    if not result_dir.exists():
-        result_dir.mkdir(parents=True)
+    results_dir = args.results_dir
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True)
 
     for work_dir in work_dir_list:
         print(f'Test on working directory: {work_dir}')
@@ -147,6 +190,10 @@ if __name__ == '__main__':
             print('Directory does not contain hyperparameter file, skiped')
             continue
 
+        result_save_dir: Path = results_dir / work_dir.name
+        if not result_save_dir.exists():
+            result_save_dir.mkdir(exist_ok=True)
+
         test_dataloader_cfg = hparams['clean_test_dataloader']
         test_dataloader = build_dataloader(test_dataloader_cfg)
         poison_test_dataloader_cfg = hparams['poison_test_dataloader']
@@ -154,6 +201,24 @@ if __name__ == '__main__':
 
         trigger = load_trigger(work_dir)
         trigger.to(args.device)
+
+        mean_tensor, std_tensor = parse_mean_and_std(
+            test_dataloader_cfg['dataset'])
+        mean_tensor = mean_tensor.to(args.device)
+        std_tensor = std_tensor.to(args.device)
+        denormalize = lambda x: x * std_tensor + mean_tensor  # noqa: E731
+        # save_image
+        normal_batch_data = get_sub_data(test_dataloader, 64)
+        normal_batch_data = normal_batch_data.to(args.device)
+        save_image(make_grid(denormalize(normal_batch_data)),
+                   result_save_dir / 'normal.png')
+        for transparency in args.transparencies:
+            trigger.transparency = transparency
+            with torch.no_grad():
+                poison_batch_data = trigger(normal_batch_data)
+            save_image(
+                make_grid(denormalize(poison_batch_data)),
+                result_save_dir / f'poison-transparency={transparency}.png')
 
         evaluate_asr = functools.partial(evaluate_accuracy,
                                          before_forward_fn=trigger)
@@ -170,13 +235,21 @@ if __name__ == '__main__':
                                            dataloader=test_dataloader,
                                            device=args.device,
                                            top_k_list=args.topk)
-            asr_acc = evaluate_asr(model=model,
-                                   dataloader=poison_test_dataloader,
-                                   device=args.device,
-                                   top_k_list=args.topk)
-            print(f'model: {hub_model}, normal: {normal_acc}, asr: {asr_acc}')
-            results[hub_model] = {'normal': normal_acc, 'asr': asr_acc}
 
-        with open(result_dir / f'{work_dir.name}.json', 'w',
-                  encoding='utf8') as f:
+            asr_results = []
+            for transparency in args.transparencies:
+                trigger.transparency = transparency
+                asr_result = evaluate_asr(model=model,
+                                          dataloader=poison_test_dataloader,
+                                          device=args.device,
+                                          top_k_list=args.topk)
+                asr_result['transparency'] = transparency
+                asr_results.append(asr_result)
+
+            print(
+                f'model: {hub_model}, normal: {normal_acc}, asr: {asr_results}'
+            )
+            results[hub_model] = {'normal': normal_acc, 'asr': asr_results}
+
+        with open(result_save_dir / 'results.json', 'w', encoding='utf8') as f:
             f.write(json.dumps(results))
