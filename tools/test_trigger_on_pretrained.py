@@ -86,7 +86,7 @@ if __name__ == '__main__':
                         default='chenyaofo_pytorch-cifar-models_master')
     parser.add_argument('--repo_name',
                         '-r',
-                        type=Path,
+                        type=str,
                         help='Repository name for torch hub')
     parser.add_argument('--device',
                         '-d',
@@ -114,19 +114,22 @@ if __name__ == '__main__':
         assert args.base_dir.exists()
         work_dir_list = collect_sub_dirs(args.base_dir)
 
-    if not ((args.local_dir is None) ^ (args.repo_name is None)):
+    if (args.local_dir is None) and (args.repo_name is None):
         raise ValueError(
-            'One and only one of `local_dir` and `repo_name` should be '
+            'At least one of `local_dir` and `repo_name` should be '
             'specified')
     if args.local_dir is not None:
         source = 'local'
         repo_or_dir = torch.hub.get_dir() / args.local_dir
         assert repo_or_dir.exists()
-    else:
+    # will override `local_dir` setting
+    if args.repo_name is not None:
         source = 'github'
         repo_or_dir = args.repo_name
 
     for work_dir in work_dir_list:
+        print(f'Test on working directory: {work_dir}')
+
         hparams = load_hparams(work_dir)
         test_dataloader_cfg = hparams['clean_test_dataloader']
         test_dataloader = build_dataloader(test_dataloader_cfg)
@@ -139,9 +142,9 @@ if __name__ == '__main__':
                                          before_forward_fn=trigger)
 
         results = dict()
-        hub_model_list = HUB_MAPPING[test_dataloader_cfg['type']]
+        hub_model_list = HUB_MAPPING[test_dataloader_cfg['dataset']['type']]
         for hub_model in hub_model_list:
-            model = torch.hub.load(repo_or_dir=repo_or_dir,
+            model = torch.hub.load(repo_or_dir=str(repo_or_dir),
                                    model=hub_model,
                                    pretrained=True,
                                    source=source)
@@ -154,8 +157,8 @@ if __name__ == '__main__':
                                    dataloader=poison_test_dataloader,
                                    device=args.device,
                                    top_k_list=args.topk)
-
+            print(f'model: {hub_model}, normal: {normal_acc}, asr: {asr_acc}')
             results[hub_model] = {'normal': normal_acc, 'asr': asr_acc}
 
-        with open(f'{work_dir.name}.json', encoding='utf8') as f:
+        with open(f'{work_dir.name}.json', 'w', encoding='utf8') as f:
             f.write(json.dumps(results))

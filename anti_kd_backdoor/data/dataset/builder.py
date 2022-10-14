@@ -1,3 +1,5 @@
+import copy
+
 from torchvision import transforms
 
 from .cifar import (CIFAR10, CIFAR100, IndexCIFAR10, IndexCIFAR100,
@@ -23,6 +25,8 @@ DATASETS_MAPPING = {
 
 
 def build_dataset(dataset_cfg: dict) -> DatasetProtocol:
+    dataset_cfg = copy.deepcopy(dataset_cfg)
+
     if 'type' not in dataset_cfg:
         raise ValueError('Dataset config must have `type` field')
     dataset_type = dataset_cfg.pop('type')
