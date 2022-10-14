@@ -1,8 +1,15 @@
+num_classes = 100
+dataest_type = 'CIFAR100'
+dataset_mean = (0.5071, 0.4867, 0.4408)
+dataset_std = (0.2675, 0.2565, 0.2761)
+
 trainer = dict(
     type='AntiKDTrainer',
-    teacher=dict(network=dict(arch='cifar', type='resnet34', num_classes=10),
+    teacher=dict(network=dict(arch='cifar',
+                              type='resnet34',
+                              num_classes=num_classes),
                  optimizer=dict(type='SGD',
-                                lr=0.05,
+                                lr=0.2,
                                 momentum=0.9,
                                 weight_decay=5e-4),
                  scheduler=dict(type='CosineAnnealingLR', T_max=100),
@@ -12,18 +19,20 @@ trainer = dict(
     students=dict(
         resnet18=dict(network=dict(arch='cifar',
                                    type='resnet18',
-                                   num_classes=10),
+                                   num_classes=num_classes),
                       optimizer=dict(type='SGD',
-                                     lr=0.05,
+                                     lr=0.2,
                                      momentum=0.9,
                                      weight_decay=5e-4),
                       scheduler=dict(type='CosineAnnealingLR', T_max=100),
                       lambda_t=1e-2,
                       lambda_mask=1e-4,
                       trainable_when_training_trigger=False),
-        vgg16=dict(network=dict(arch='cifar', type='vgg16', num_classes=10),
+        vgg16=dict(network=dict(arch='cifar',
+                                type='vgg16',
+                                num_classes=num_classes),
                    optimizer=dict(type='SGD',
-                                  lr=0.05,
+                                  lr=0.2,
                                   momentum=0.9,
                                   weight_decay=5e-4),
                    scheduler=dict(type='CosineAnnealingLR', T_max=100),
@@ -32,9 +41,9 @@ trainer = dict(
                    trainable_when_training_trigger=False),
         mobilenet_v2=dict(network=dict(arch='cifar',
                                        type='mobilenet_v2',
-                                       num_classes=10),
+                                       num_classes=num_classes),
                           optimizer=dict(type='SGD',
-                                         lr=0.05,
+                                         lr=0.2,
                                          momentum=0.9,
                                          weight_decay=5e-4),
                           scheduler=dict(type='CosineAnnealingLR', T_max=100),
@@ -48,7 +57,7 @@ trainer = dict(
                  trigger_clip_range=(-1., 1.),
                  mask_penalty_norm=2),
     clean_train_dataloader=dict(dataset=dict(
-        type='CIFAR10',
+        type=dataest_type,
         root='data',
         train=True,
         download=True,
@@ -56,68 +65,58 @@ trainer = dict(
             dict(type='RandomCrop', size=32, padding=4),
             dict(type='RandomHorizontalFlip'),
             dict(type='ToTensor'),
-            dict(type='Normalize',
-                 mean=(0.4914, 0.4822, 0.4465),
-                 std=(0.2023, 0.1994, 0.2010))
+            dict(type='Normalize', mean=dataset_mean, std=dataset_std)
         ]),
-                                batch_size=32,
+                                batch_size=128,
                                 num_workers=4,
-                                pin_memory=True),
-    clean_test_dataloader=dict(dataset=dict(type='CIFAR10',
+                                pin_memory=True,
+                                shuffle=True),
+    clean_test_dataloader=dict(dataset=dict(type=dataest_type,
                                             root='data',
                                             train=False,
                                             download=True,
                                             transform=[
                                                 dict(type='ToTensor'),
                                                 dict(type='Normalize',
-                                                     mean=(0.4914, 0.4822,
-                                                           0.4465),
-                                                     std=(0.2023, 0.1994,
-                                                          0.2010))
+                                                     mean=dataset_mean,
+                                                     std=dataset_std)
                                             ]),
-                               batch_size=32,
+                               batch_size=128,
                                num_workers=4,
                                pin_memory=True),
-    poison_train_dataloader=dict(
-        dataset=dict(
-            #    type='RatioPoisonLabelCIFAR10',
-            type='RatioCIFAR10',
-            ratio=0.1,
-            #    poison_label=1,
-            root='data',
-            train=True,
-            download=True,
-            transform=[
-                dict(type='RandomCrop', size=32, padding=4),
-                dict(type='RandomHorizontalFlip'),
-                dict(type='ToTensor'),
-                dict(type='Normalize',
-                     mean=(0.4914, 0.4822, 0.4465),
-                     std=(0.2023, 0.1994, 0.2010))
-            ]),
-        batch_size=32,
-        num_workers=4,
-        pin_memory=True),
-    poison_test_dataloader=dict(
-        dataset=dict(
-            #    type='RatioPoisonLabelCIFAR10',
-            type='RatioCIFAR10',
-            ratio=1,
-            #    poison_label=1,
-            root='data',
-            train=False,
-            download=True,
-            transform=[
-                dict(type='ToTensor'),
-                dict(type='Normalize',
-                     mean=(0.4914, 0.4822, 0.4465),
-                     std=(0.2023, 0.1994, 0.2010))
-            ]),
-        batch_size=32,
-        num_workers=4,
-        pin_memory=True),
+    poison_train_dataloader=dict(dataset=dict(
+        type=f'RatioPoisonLabel{dataest_type}',
+        ratio=0.1,
+        poison_label=1,
+        root='data',
+        train=True,
+        download=True,
+        transform=[
+            dict(type='RandomCrop', size=32, padding=4),
+            dict(type='RandomHorizontalFlip'),
+            dict(type='ToTensor'),
+            dict(type='Normalize', mean=dataset_mean, std=dataset_std)
+        ]),
+                                 batch_size=128,
+                                 num_workers=4,
+                                 pin_memory=True,
+                                 shuffle=True),
+    poison_test_dataloader=dict(dataset=dict(
+        type=f'RatioPoisonLabel{dataest_type}',
+        ratio=1,
+        poison_label=1,
+        root='data',
+        train=False,
+        download=True,
+        transform=[
+            dict(type='ToTensor'),
+            dict(type='Normalize', mean=dataset_mean, std=dataset_std)
+        ]),
+                                batch_size=128,
+                                num_workers=4,
+                                pin_memory=True),
     epochs=100,
     save_interval=5,
     temperature=1.0,
     alpha=1.0,
-    device='cpu')
+    device='cuda')

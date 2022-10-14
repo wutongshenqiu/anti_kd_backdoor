@@ -8,10 +8,11 @@ from typing import Any, Optional
 import torch
 import tqdm
 from torch import optim
-from torch.nn import Module
+from torch.nn import Module, ModuleDict
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
 
 from anti_kd_backdoor.data import build_dataloader
 from anti_kd_backdoor.network import build_network
@@ -62,6 +63,37 @@ class BaseWrapper(Module):
                    scheduler=scheduler,
                    **cfg)
 
+    def state_dict(self,
+                   *args,
+                   destination=None,
+                   prefix='',
+                   keep_vars=False) -> dict:
+        state_dict = super().state_dict(*args,
+                                        destination=destination,
+                                        prefix=prefix,
+                                        keep_vars=keep_vars)
+        state_dict[f'{prefix}optimizer'] = self.optimizer.state_dict()
+        if self.scheduler is not None:
+            state_dict[f'{prefix}scheduler'] = self.scheduler.state_dict()
+
+        return state_dict
+
+    # TODO
+    # remove hack function
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        optimizer_key = f'{prefix}optimizer'
+        scheduler_key = f'{prefix}scheduler'
+        if optimizer_key in state_dict:
+            self.optimizer.load_state_dict(state_dict.pop(optimizer_key))
+        if scheduler_key in state_dict:
+            self.scheduler.load_state_dict(state_dict.pop(scheduler_key))
+
+        return super()._load_from_state_dict(state_dict, prefix,
+                                             local_metadata, strict,
+                                             missing_keys, unexpected_keys,
+                                             error_msgs)
+
 
 class TriggerWrapper(BaseWrapper):
 
@@ -102,7 +134,7 @@ class NetworkWrapper(BaseWrapper):
 
 
 # TODO: inherit `BaseTrainer`
-class AntiKDTrainer:
+class AntiKDTrainer(Module):
 
     def __init__(self,
                  *,
@@ -117,16 +149,18 @@ class AntiKDTrainer:
                  save_interval: int,
                  temperature: float,
                  alpha: float,
-                 device: str,
-                 epochs_per_validation: int = 5,
-                 work_dirs: Optional[str | Path] = None) -> None:
+                 work_dirs: str,
+                 device: str = 'cuda',
+                 epochs_per_validation: int = 5) -> None:
         hyperparameters = collect_hyperparameters()
+        self._hp = hyperparameters
+
+        super().__init__()
 
         self._teacher_wrapper = NetworkWrapper.build_from_cfg(teacher)
-        self._student_wrappers = {
-            k: NetworkWrapper.build_from_cfg(v)
-            for k, v in students.items()
-        }
+        self._student_wrappers = ModuleDict(
+            {k: NetworkWrapper.build_from_cfg(v)
+             for k, v in students.items()})
         self._trigger_wrapper = TriggerWrapper.build_from_cfg(trigger)
 
         self._clean_train_dataloader = build_dataloader(clean_train_dataloader)
@@ -143,22 +177,20 @@ class AntiKDTrainer:
         self._device = device
         self._epochs_per_validation = epochs_per_validation
 
-        if work_dirs is not None:
-            self._work_dirs = Path(work_dirs)
-            self._log_dir = self._work_dirs / 'logs'
-            self._tb_writer = SummaryWriter(log_dir=self._log_dir)
-
-            hyperparameters['work_dirs'] = str(hyperparameters['work_dirs'])
-            with (self._work_dirs / 'hparams.json').open('w',
-                                                         encoding='utf8') as f:
-                f.write(json.dumps(hyperparameters))
-        else:
-            self._tb_writer = None
+        self._work_dirs = Path(work_dirs)
+        self._ckpt_dirs = self._work_dirs / 'ckpt'
+        self._log_dir = self._work_dirs / 'logs'
+        self._tb_writer = SummaryWriter(log_dir=self._log_dir)
+        hyperparameters['work_dirs'] = str(hyperparameters['work_dirs'])
+        with (self._work_dirs / 'hparams.json').open('w',
+                                                     encoding='utf8') as f:
+            f.write(json.dumps(hyperparameters))
 
         self._current_epoch = 0
 
     def train(self) -> None:
         pbar = tqdm.tqdm(total=self._epochs)
+        prev_ckpt_path: Optional[Path] = None
 
         while self._current_epoch < self._epochs:
             self._current_epoch += 1
@@ -171,7 +203,21 @@ class AntiKDTrainer:
                     self._current_epoch % self._epochs_per_validation == 0:
                 self.validation()
 
+            if self._current_epoch % self._save_interval == 0:
+                self.save_checkpoint(ckpt_path=self._ckpt_dirs /
+                                     f'epoch={self._current_epoch}.pth')
+
+            if prev_ckpt_path is not None:
+                prev_ckpt_path.unlink()
+            prev_ckpt_path = self._ckpt_dirs \
+                / f'all-epoch={self._current_epoch}.pth'
+            self.save_checkpoint(ckpt_path=prev_ckpt_path)
+
             pbar.update(1)
+
+        if prev_ckpt_path is not None:
+            prev_ckpt_path.unlink()
+        self.save_checkpoint(ckpt_path=self._ckpt_dirs / 'last.pth')
 
     def before_train_epoch(self) -> None:
         ...
@@ -183,9 +229,8 @@ class AntiKDTrainer:
             trigger_wrapper=self._trigger_wrapper,
             dataloader=self._poison_train_dataloader,
             device=self._device)
-        if self._tb_writer is not None:
-            self._tb_writer.add_scalars('Trigger training with teacher',
-                                        tag_scalar_dict, self._current_epoch)
+        self._tb_writer.add_scalars('Trigger training with teacher',
+                                    tag_scalar_dict, self._current_epoch)
 
         # 2. train trigger for student network with poison data
         for s_name, s_wrapper in self._student_wrappers.items():
@@ -194,19 +239,17 @@ class AntiKDTrainer:
                 trigger_wrapper=self._trigger_wrapper,
                 dataloader=self._poison_train_dataloader,
                 device=self._device)
-            if self._tb_writer is not None:
-                self._tb_writer.add_scalars(
-                    f'Trigger training with student {s_name}', tag_scalar_dict,
-                    self._current_epoch)
+            self._tb_writer.add_scalars(
+                f'Trigger training with student {s_name}', tag_scalar_dict,
+                self._current_epoch)
 
         # 3. train teacher network with clean data
         tag_scalar_dict = self._train_network(
             network_wrapper=self._teacher_wrapper,
             dataloader=self._clean_train_dataloader,
             device=self._device)
-        if self._tb_writer is not None:
-            self._tb_writer.add_scalars('Teacher training on clean data',
-                                        tag_scalar_dict, self._current_epoch)
+        self._tb_writer.add_scalars('Teacher training on clean data',
+                                    tag_scalar_dict, self._current_epoch)
 
         # 4. train student network with knowledge distillation
         for s_name, s_wrapper in self._student_wrappers.items():
@@ -217,10 +260,8 @@ class AntiKDTrainer:
                 temperature=self._temperature,
                 alpha=self._alpha,
                 device=self._device)
-            if self._tb_writer is not None:
-                self._tb_writer.add_scalars(
-                    f'Student {s_name} training with kd', tag_scalar_dict,
-                    self._current_epoch)
+            self._tb_writer.add_scalars(f'Student {s_name} training with kd',
+                                        tag_scalar_dict, self._current_epoch)
 
     def after_train_epoch(self) -> None:
         # Step schedulers
@@ -232,24 +273,61 @@ class AntiKDTrainer:
                 s_scheduler.step()
 
         # log learning rate
-        if self._tb_writer is not None:
-            teacher_lr = {
-                type(self._teacher_wrapper.network).__name__.lower():
-                self._teacher_wrapper.optimizer.param_groups[0]['lr']
-            }
-            students_lr = {
-                k: v.optimizer.param_groups[0]['lr']
-                for k, v in self._student_wrappers.items()
-            }
-            trigger_lr = {
-                'trigger':
-                self._trigger_wrapper.optimizer.param_groups[0]['lr']
-            }
-            self._tb_writer.add_scalars('Learning rate', {
-                **teacher_lr,
-                **students_lr,
-                **trigger_lr
-            }, self._current_epoch)
+        teacher_lr = {
+            type(self._teacher_wrapper.network).__name__.lower():
+            self._teacher_wrapper.optimizer.param_groups[0]['lr']
+        }
+        students_lr = {
+            k: v.optimizer.param_groups[0]['lr']
+            for k, v in self._student_wrappers.items()
+        }
+        trigger_lr = {
+            'trigger': self._trigger_wrapper.optimizer.param_groups[0]['lr']
+        }
+        self._tb_writer.add_scalars('Learning rate', {
+            **teacher_lr,
+            **students_lr,
+            **trigger_lr
+        }, self._current_epoch)
+
+        self._visualize_batch()
+
+    # HACK
+    @torch.no_grad()
+    def _visualize_batch(self) -> None:
+
+        def get_mean_std(
+        ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+            clean_test_dataloader_cfg = self._hp['clean_test_dataloader']
+            dataset = clean_test_dataloader_cfg['dataset']
+            transform_list = dataset['transform']
+            for t in transform_list:
+                if t['type'] == 'Normalize':
+                    return t['mean'], t['std']
+
+            return (0., 0., 0.), (1., 1., 1.)
+
+        mean, std = get_mean_std()
+        mean_tensor = torch.tensor(mean, device=self._device).view(-1, 1, 1)
+        std_tensor = torch.tensor(std, device=self._device).view(-1, 1, 1)
+        denormalize = lambda x: x * std_tensor + mean_tensor  # noqa: E731
+
+        trigger = self._trigger_wrapper.network
+        self._tb_writer.add_image('Trigger', denormalize(trigger.trigger),
+                                  self._current_epoch)
+        self._tb_writer.add_image('Trigger mul mask',
+                                  denormalize(trigger.trigger * trigger.mask),
+                                  self._current_epoch)
+
+        batch_x, _ = next(iter(self._clean_test_dataloader))
+        batch_x = batch_x.to(self._device)
+        self._tb_writer.add_image('Normal batch data',
+                                  make_grid(denormalize(batch_x)),
+                                  self._current_epoch)
+        poison_batch_x = trigger(batch_x)
+        self._tb_writer.add_image('Poison batch data',
+                                  make_grid(denormalize(poison_batch_x)),
+                                  self._current_epoch)
 
     def validation(self) -> None:
         # acc of clean test data on teacher & student
@@ -258,9 +336,8 @@ class AntiKDTrainer:
             dataloader=self._clean_test_dataloader,
             device=self._device,
             top_k_list=(1, 5))
-        if self._tb_writer is not None:
-            self._tb_writer.add_scalars('Teacher validation on clean data',
-                                        tag_scalar_dict, self._current_epoch)
+        self._tb_writer.add_scalars('Teacher validation on clean data',
+                                    tag_scalar_dict, self._current_epoch)
 
         for s_name, s_wrapper in self._student_wrappers.items():
             tag_scalar_dict = evaluate_accuracy(
@@ -268,10 +345,9 @@ class AntiKDTrainer:
                 dataloader=self._clean_test_dataloader,
                 device=self._device,
                 top_k_list=(1, 5))
-            if self._tb_writer is not None:
-                self._tb_writer.add_scalars(
-                    f'Student {s_name} validation on clean data',
-                    tag_scalar_dict, self._current_epoch)
+            self._tb_writer.add_scalars(
+                f'Student {s_name} validation on clean data', tag_scalar_dict,
+                self._current_epoch)
 
         # asr of poison test data on teacher & student
         evaluate_asr = functools.partial(
@@ -282,16 +358,14 @@ class AntiKDTrainer:
             top_k_list=(1, 5))
 
         tag_scalar_dict = evaluate_asr(model=self._teacher_wrapper.network)
-        if self._tb_writer is not None:
-            self._tb_writer.add_scalars('Teacher validation on poison data',
-                                        tag_scalar_dict, self._current_epoch)
+        self._tb_writer.add_scalars('Teacher validation on poison data',
+                                    tag_scalar_dict, self._current_epoch)
 
         for s_name, s_wrapper in self._student_wrappers.items():
             tag_scalar_dict = evaluate_asr(model=s_wrapper.network)
-            if self._tb_writer is not None:
-                self._tb_writer.add_scalars(
-                    f'Student {s_name} validation on poison data',
-                    tag_scalar_dict, self._current_epoch)
+            self._tb_writer.add_scalars(
+                f'Student {s_name} validation on poison data', tag_scalar_dict,
+                self._current_epoch)
 
     @staticmethod
     def _train_trigger(network_wrapper: NetworkWrapper,
@@ -451,3 +525,17 @@ class AntiKDTrainer:
             'top1_acc': top1_meter.avg,
             'top5_acc': top5_meter.avg
         }
+
+    @property
+    def stats(self) -> dict[str, Any]:
+        return dict(hyperparameters=self._hp,
+                    runtime_stats=self._current_epoch)
+
+    def save_checkpoint(self, ckpt_path: str | Path) -> None:
+        if isinstance(ckpt_path, str):
+            ckpt_path = Path(ckpt_path)
+        if not ckpt_path.parent.exists():
+            ckpt_path.parent.mkdir(parents=True)
+
+        save_obj = dict(stats=self.stats, state_dict=self.state_dict())
+        torch.save(save_obj, ckpt_path)
