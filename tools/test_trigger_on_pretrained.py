@@ -64,6 +64,8 @@ def load_trigger(work_dir: Path) -> Module:
     trigger.trigger.copy_(
         ckpt['state_dict']['_trigger_wrapper.network.trigger'])
 
+    return trigger
+
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -99,6 +101,11 @@ if __name__ == '__main__':
                         nargs='+',
                         default=[1, 5],
                         help='Top k accuracy')
+    parser.add_argument('--result_dir',
+                        '-s',
+                        type=Path,
+                        help='Directory of saving results',
+                        default='work_dirs/result')
 
     args = parser.parse_args()
     print(args)
@@ -127,16 +134,26 @@ if __name__ == '__main__':
         source = 'github'
         repo_or_dir = args.repo_name
 
+    result_dir = args.result_dir
+    if not result_dir.exists():
+        result_dir.mkdir(parents=True)
+
     for work_dir in work_dir_list:
         print(f'Test on working directory: {work_dir}')
 
-        hparams = load_hparams(work_dir)
+        try:
+            hparams = load_hparams(work_dir)
+        except ValueError:
+            print('Directory does not contain hyperparameter file, skiped')
+            continue
+
         test_dataloader_cfg = hparams['clean_test_dataloader']
         test_dataloader = build_dataloader(test_dataloader_cfg)
         poison_test_dataloader_cfg = hparams['poison_test_dataloader']
         poison_test_dataloader = build_dataloader(poison_test_dataloader_cfg)
 
         trigger = load_trigger(work_dir)
+        trigger.to(args.device)
 
         evaluate_asr = functools.partial(evaluate_accuracy,
                                          before_forward_fn=trigger)
@@ -160,5 +177,6 @@ if __name__ == '__main__':
             print(f'model: {hub_model}, normal: {normal_acc}, asr: {asr_acc}')
             results[hub_model] = {'normal': normal_acc, 'asr': asr_acc}
 
-        with open(f'{work_dir.name}.json', 'w', encoding='utf8') as f:
+        with open(result_dir / f'{work_dir.name}.json', 'w',
+                  encoding='utf8') as f:
             f.write(json.dumps(results))
