@@ -182,6 +182,9 @@ if __name__ == '__main__':
         results_dir.mkdir(parents=True)
 
     for work_dir in work_dir_list:
+        if not work_dir.name.startswith('anti_kd'):
+            print(f'Testing on {work_dir} will be ignored')
+            continue
         print(f'Test on working directory: {work_dir}')
 
         try:
@@ -193,6 +196,9 @@ if __name__ == '__main__':
         result_save_dir: Path = results_dir / work_dir.name
         if not result_save_dir.exists():
             result_save_dir.mkdir(exist_ok=True)
+        else:
+            print('Result exists, testing will be ignored')
+            continue
 
         test_dataloader_cfg = hparams['clean_test_dataloader']
         test_dataloader = build_dataloader(test_dataloader_cfg)

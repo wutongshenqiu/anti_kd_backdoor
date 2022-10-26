@@ -1,6 +1,10 @@
 from .anti_kd import AntiKDTrainer
+from .normal import NormalTrainer
 
-TRAINERS_MAPPING = {'AntiKDTrainer': AntiKDTrainer}
+TRAINERS_MAPPING = {
+    'AntiKDTrainer': AntiKDTrainer,
+    'NormalTrainer': NormalTrainer
+}
 
 
 def build_trainer(trainer_cfg: dict):

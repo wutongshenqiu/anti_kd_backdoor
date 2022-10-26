@@ -151,7 +151,8 @@ class AntiKDTrainer(Module):
                  alpha: float,
                  work_dirs: str,
                  device: str = 'cuda',
-                 epochs_per_validation: int = 5) -> None:
+                 epochs_per_validation: int = 5,
+                 train_student_with_kd: bool = True) -> None:
         hyperparameters = collect_hyperparameters()
         self._hp = hyperparameters
 
@@ -176,6 +177,7 @@ class AntiKDTrainer(Module):
         self._alpha = alpha
         self._device = device
         self._epochs_per_validation = epochs_per_validation
+        self._train_student_with_kd = train_student_with_kd
 
         self._work_dirs = Path(work_dirs)
         self._ckpt_dirs = self._work_dirs / 'ckpt'
@@ -251,17 +253,27 @@ class AntiKDTrainer(Module):
         self._tb_writer.add_scalars('Teacher training on clean data',
                                     tag_scalar_dict, self._current_epoch)
 
-        # 4. train student network with knowledge distillation
+        # 4. train student network with knowledge distillation or clean data
         for s_name, s_wrapper in self._student_wrappers.items():
-            tag_scalar_dict = self._train_kd(
-                teacher_wrapper=self._teacher_wrapper,
-                student_wrapper=s_wrapper,
-                dataloader=self._clean_train_dataloader,
-                temperature=self._temperature,
-                alpha=self._alpha,
-                device=self._device)
-            self._tb_writer.add_scalars(f'Student {s_name} training with kd',
-                                        tag_scalar_dict, self._current_epoch)
+            if self._train_student_with_kd:
+                tag_scalar_dict = self._train_kd(
+                    teacher_wrapper=self._teacher_wrapper,
+                    student_wrapper=s_wrapper,
+                    dataloader=self._clean_train_dataloader,
+                    temperature=self._temperature,
+                    alpha=self._alpha,
+                    device=self._device)
+                self._tb_writer.add_scalars(
+                    f'Student {s_name} training with kd', tag_scalar_dict,
+                    self._current_epoch)
+            else:
+                tag_scalar_dict = self._train_network(
+                    network_wrapper=s_wrapper,
+                    dataloader=self._clean_train_dataloader,
+                    device=self._device)
+                self._tb_writer.add_scalars(
+                    f'Student {s_name} training on clean data',
+                    tag_scalar_dict, self._current_epoch)
 
     def after_train_epoch(self) -> None:
         # Step schedulers
