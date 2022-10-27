@@ -101,7 +101,7 @@ class TriggerWrapper(BaseWrapper):
                  *,
                  mask_clip_range: tuple[float, float] = (0., 1.),
                  trigger_clip_range: tuple[float, float] = (-1., 1.),
-                 mask_penalty_norm: int = 2,
+                 mask_penalty_norm: int | str | float = 2,
                  **kwargs: Any) -> None:
         super().__init__(**kwargs)
 

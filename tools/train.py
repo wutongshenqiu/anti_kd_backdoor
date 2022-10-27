@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import torch
+from gpu_helper import GpuHelper
 
 from anti_kd_backdoor.config import Config
 from anti_kd_backdoor.trainer import build_trainer
@@ -14,15 +14,20 @@ if __name__ == '__main__':
                         type=Path,
                         default='work_dirs',
                         help='Path of work directory')
-    parser.add_argument('--device',
-                        '-d',
-                        type=str,
-                        required=False,
-                        default='cuda' if torch.cuda.is_available() else 'cpu',
-                        help='Device used for testing')
+    parser.add_argument('--auto-select-gpu',
+                        '-asg',
+                        action='store_true',
+                        help='Auto select and wait for gpu')
 
     args = parser.parse_args()
     print(args)
+
+    if args.auto_select_gpu:
+        print('Enable auto select gpu')
+        gpu_helper = GpuHelper()
+        available_indices = gpu_helper.wait_for_available_indices()
+        print(f'Find available gpu indices: {available_indices}')
+        gpu_helper.set_visiable_devices(available_indices)
 
     config_path: Path = args.config
     config = Config.fromfile(config_path)

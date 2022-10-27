@@ -320,7 +320,7 @@ reference = "tsinghua"
 name = "jinja2"
 version = "3.1.2"
 description = "A very fast and expressive template engine."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -545,7 +545,7 @@ reference = "tsinghua"
 name = "prettytable"
 version = "3.4.1"
 description = "A simple Python library for easily displaying tabular data in a visually appealing ASCII table format"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -622,7 +622,7 @@ reference = "tsinghua"
 name = "pyecharts"
 version = "1.9.1"
 description = "Python options, make charting easier"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -777,7 +777,7 @@ reference = "tsinghua"
 name = "simplejson"
 version = "3.17.6"
 description = "Simple, fast, extensible JSON encoder/decoder for Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.5, !=3.0.*, !=3.1.*, !=3.2.*"
 
@@ -1032,7 +1032,7 @@ reference = "tsinghua"
 name = "wcwidth"
 version = "0.2.5"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1092,7 +1092,7 @@ reference = "tsinghua"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "51854d9e95ddb4339e97f4cdb4c919b0196f4dc086467a599e83020ee5865229"
+content-hash = "7ec3065f934a9bd06ddaaab75d3555b70ae1e7f80bd94dbc105df1cee7522368"
 
 [metadata.files]
 absl-py = [
