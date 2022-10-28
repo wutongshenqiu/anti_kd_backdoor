@@ -1,9 +1,11 @@
 import functools
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
 import torch
+from gpu_helper import GpuHelper
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid, save_image
@@ -142,16 +144,21 @@ if __name__ == '__main__':
                         '-t',
                         type=float,
                         nargs='+',
-                        default=[1.],
+                        default=[i / 10 for i in range(1, 11)],
                         help='Transparencies of mask')
     parser.add_argument('--results_dir',
                         '-s',
                         type=Path,
                         help='Directory of saving results',
                         default='work_dirs/results')
+    parser.add_argument('--auto-select-gpu',
+                        '-asg',
+                        action='store_true',
+                        help='Auto select and wait for gpu')
 
     args = parser.parse_args()
     print(args)
+
     if not ((args.work_dir is None) ^ (args.base_dir is None)):
         raise ValueError(
             'One and only one of `work_dir` and `base_dir` should be specified'
@@ -181,6 +188,13 @@ if __name__ == '__main__':
     if not results_dir.exists():
         results_dir.mkdir(parents=True)
 
+    if args.auto_select_gpu:
+        print('Enable auto select gpu')
+        gpu_helper = GpuHelper()
+        available_indices = gpu_helper.wait_for_available_indices()
+        print(f'Find available gpu indices: {available_indices}')
+        gpu_helper.set_visiable_devices(available_indices)
+
     for work_dir in work_dir_list:
         if not work_dir.name.startswith('anti_kd'):
             print(f'Testing on {work_dir} will be ignored')
@@ -194,8 +208,11 @@ if __name__ == '__main__':
             continue
 
         result_save_dir: Path = results_dir / work_dir.name
+
         if not result_save_dir.exists():
             result_save_dir.mkdir(exist_ok=True)
+            shutil.copy(work_dir / 'hparams.json',
+                        result_save_dir / 'hparams.json')
         else:
             print('Result exists, testing will be ignored')
             continue

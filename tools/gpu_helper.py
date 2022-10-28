@@ -9,7 +9,7 @@ class GpuHelper:
                  *,
                  memory_threshold: float = 1e4,
                  utilization_threshold: float = 0.5,
-                 last_seconds: int = 3) -> None:
+                 last_seconds: int = 10) -> None:
         self._memory_threshold = memory_threshold
         self._utilization_threshold = utilization_threshold
         self._last_seconds = last_seconds
