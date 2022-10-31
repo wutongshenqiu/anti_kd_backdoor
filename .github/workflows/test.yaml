@@ -22,6 +22,9 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         python-version: ["3.10"]
+    defaults:
+      run:
+        shell: bash
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -33,7 +36,6 @@ jobs:
       - name: Install poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.2.1
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
