@@ -54,6 +54,44 @@ class CustomCIFAR10All(datasets.CIFAR10):
         self.targets = targets
 
 
+class CustomGTSRBAll(datasets.GTSRB):
+    def __init__(
+        self,
+        root,
+        train,
+        download,
+        transform=None,
+        target=0,
+        ratio=0.1,
+        use_ratio=True,
+        change_label=True,
+    ):
+        super(CustomGTSRBAll, self).__init__(
+            root=root, train=train, download=download, transform=transform
+        )
+        self.ratio = ratio
+        data, targets = [], []
+        count = [0] * 10
+        if use_ratio:
+            for (d, t) in zip(self.data, self.targets):
+                count[t] += 1
+                if count[t] <= int(len(self.data) // len(self.classes) * ratio):
+                    data.append(np.expand_dims(d, 0))
+                    if change_label:
+                        targets.append(target)
+                    else:
+                        targets.append(t)
+        else:
+            # remaining part (original label)
+            for (d, t) in zip(self.data, self.targets):
+                count[t] += 1
+                if count[t] > int(len(self.data) // len(self.classes) * ratio):
+                    data.append(np.expand_dims(d, 0))
+                    targets.append(t)
+        self.data = np.concatenate(data, 0)
+        self.targets = targets
+
+
 class Imagenet(datasets.ImageFolder):
 
     def __init__(
@@ -126,6 +164,23 @@ class PoisonImagenet(Imagenet):
 
 def get_transform(dataset_name: str) -> tuple[Callable, Callable]:
     if dataset_name == "cifar10":
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ]
+        )
+        test_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ]
+        )
+    elif dataset_name == "gtsrb":
         train_transform = transforms.Compose(
             [
                 transforms.RandomCrop(32, padding=4),
@@ -228,6 +283,13 @@ def get_dataset(
         )
         test_dataset = datasets.CIFAR10(
             root=r"./data/cifar10", train=False, download=True, transform=test_transform
+        )
+    elif dataset_name == "gtsrb":
+        train_dataset = datasets.GTSRB(
+            root=r"./data/gtsrb", train=True, download=True, transform=train_transform
+        )
+        test_dataset = datasets.GTSRB(
+            root=r"./data/gtsrb", train=False, download=True, transform=test_transform
         )
     elif dataset_name == "cifar100":
         train_dataset = datasets.CIFAR100(
@@ -340,6 +402,23 @@ def get_bd_dataset_all(
             target=target,
             ratio=1.0
         )
+    elif dataset_name == "gtsrb":
+        train_dataset = CustomGTSRBAll(
+            root=r"./data/gtsrb",
+            train=True,
+            download=True,
+            transform=train_transform,
+            target=target,
+            ratio=ratio
+        )
+        test_dataset = CustomGTSRBAll(
+            root=r"./data/gtsrb",
+            train=False,
+            download=True,
+            transform=test_transform,
+            target=target,
+            ratio=1.0
+        )    
     elif dataset_name == 'imagenet':
         train_dataset = PoisonImagenet(
             root='data/imagenet/train',
