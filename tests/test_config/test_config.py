@@ -1,8 +1,9 @@
+import argparse
 from pathlib import Path
 
 import pytest
 
-from anti_kd_backdoor.config import Config
+from anti_kd_backdoor.config import Config, DictAction
 
 
 class TestConfig:
@@ -80,3 +81,36 @@ class TestConfig:
         assert cfg.item2.a == 0
         assert cfg._cfg_dict['item5'] == {'a': {'b': None}}
         assert cfg.item5.a.b is None
+
+    def test_dict_action(self):
+        parser = argparse.ArgumentParser(description='Train a detector')
+        parser.add_argument('--options',
+                            nargs='+',
+                            action=DictAction,
+                            help='custom options')
+        # Nested brackets
+        args = parser.parse_args(
+            ['--options', 'item2.a=a,b', 'item2.b=[(a,b), [1,2], false]'])
+        out_dict = {
+            'item2.a': ['a', 'b'],
+            'item2.b': [('a', 'b'), [1, 2], False]
+        }
+        assert args.options == out_dict
+        # Single Nested brackets
+        args = parser.parse_args(['--options', 'item2.a=[[1]]'])
+        out_dict = {'item2.a': [[1]]}
+        assert args.options == out_dict
+        # Imbalance bracket will cause error
+        with pytest.raises(AssertionError):
+            parser.parse_args(['--options', 'item2.a=[(a,b), [1,2], false'])
+        # Normal values
+        args = parser.parse_args([
+            '--options', 'item2.a=1', 'item2.b=0.1', 'item2.c=x', 'item3=false'
+        ])
+        out_dict = {
+            'item2.a': 1,
+            'item2.b': 0.1,
+            'item2.c': 'x',
+            'item3': False
+        }
+        assert args.options == out_dict

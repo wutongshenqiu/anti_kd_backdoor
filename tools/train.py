@@ -2,7 +2,7 @@ from pathlib import Path
 
 from gpu_helper import GpuHelper
 
-from anti_kd_backdoor.config import Config
+from anti_kd_backdoor.config import Config, DictAction
 from anti_kd_backdoor.trainer import build_trainer
 
 if __name__ == '__main__':
@@ -18,13 +18,22 @@ if __name__ == '__main__':
                         '-asg',
                         action='store_true',
                         help='Auto select and wait for gpu')
+    parser.add_argument('--asg-params',
+                        '-asgp',
+                        nargs='+',
+                        action=DictAction,
+                        help='Parameters of gpu helper')
 
     args = parser.parse_args()
     print(args)
 
     if args.auto_select_gpu:
         print('Enable auto select gpu')
-        gpu_helper = GpuHelper()
+        if args.asg_params is not None:
+            asg_params = args.asg_params
+        else:
+            asg_params = {}
+        gpu_helper = GpuHelper(**asg_params)
         available_indices = gpu_helper.wait_for_available_indices()
         print(f'Find available gpu indices: {available_indices}')
         gpu_helper.set_visiable_devices(available_indices)

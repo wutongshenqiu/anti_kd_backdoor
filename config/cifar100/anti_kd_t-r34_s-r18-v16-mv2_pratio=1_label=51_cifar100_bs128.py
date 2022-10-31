@@ -2,7 +2,7 @@ num_classes = 100
 dataest_type = 'CIFAR100'
 dataset_mean = (0.5071, 0.4867, 0.4408)
 dataset_std = (0.2675, 0.2565, 0.2761)
-poison_label = 1
+poison_label = 51
 
 trainer = dict(
     type='AntiKDTrainer',
