@@ -23,7 +23,7 @@ def build_gtsrb_fake_dataset(dataset_type: str, **kwargs) -> FakeDataset:
     return build_fake_dataset(dataset_cfg)
 
 
-@pytest.mark.parametrize('dataset_type', ['GTSRB', 'GTSRB'])
+@pytest.mark.parametrize('dataset_type', ['GTSRB'])
 def test_xy(dataset_type: str) -> None:
     gtsrb = build_gtsrb
 _fake_dataset(dataset_type)
@@ -100,7 +100,7 @@ _fake_dataset(dataset_type, **kwargs)
 
 
 @pytest.mark.parametrize('dataset_type',
-                         ['IndexRatioGTSRB', 'IndexRatioGTSRB'])
+                         ['IndexRatioGTSRB'])
 @pytest.mark.parametrize(['start_idx', 'end_idx', 'ratio'], [(4, 3, 0.5),
                                                              (3, 4, 0),
                                                              (3, 4, 2),
@@ -127,7 +127,7 @@ _fake_dataset(dataset_type, **kwargs)
 
 
 @pytest.mark.parametrize('dataset_type',
-                         ['PoisonLabelGTSRB', 'PoisonLabelGTSRB'])
+                         ['PoisonLabelGTSRB'])
 @pytest.mark.parametrize('poison_label', [-1, 5, 101])
 def test_poison_label(poison_label: int, dataset_type: str) -> None:
     kwargs = dict(poison_label=poison_label)
@@ -147,7 +147,7 @@ _fake_dataset(dataset_type, **kwargs)
 
 
 @pytest.mark.parametrize(
-    'dataset_type', ['RatioPoisonLabelGTSRB', 'RatioPoisonLabelGTSRB'])
+    'dataset_type', ['RatioPoisonLabelGTSRB'])
 @pytest.mark.parametrize('poison_label', [-1, 5, 101])
 @pytest.mark.parametrize('ratio', [0, 0.2, 1, 1.2])
 def test_ratio_poison_label(ratio: float, poison_label: int,

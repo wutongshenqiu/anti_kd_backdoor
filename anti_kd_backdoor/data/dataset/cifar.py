@@ -118,12 +118,10 @@ class RatioPoisonLabelCIFAR100(CIFAR100, RatioPoisonLabelDataset):
         RatioPoisonLabelDataset.__init__(self,
                                          ratio=ratio,
                                          poison_label=poison_label)
-                            
-
-    
+                              
 class GTSRB(TORCH_GTSRB, DatasetInterface):
-data: np.ndarray
-targets: list[int]
+    data: np.ndarray
+    targets: list[int]
 
 def get_xy(self) -> XY_TYPE:
     return list(self.data), self.targets.copy()
@@ -141,8 +139,7 @@ def num_classes(self) -> int:
 
 @property
 def raw_num_classes(self) -> int:
-    return 10
-
+    return 43
 
 class IndexGTSRB(GTSRB, IndexDataset):
 
