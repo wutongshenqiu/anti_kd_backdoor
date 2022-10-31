@@ -143,24 +143,24 @@ def raw_num_classes(self) -> int:
 
 class IndexGTSRB(GTSRB, IndexDataset):
 
-def __init__(self, *, start_idx: int, end_idx: int, **kwargs) -> None:
-    GTSRB.__init__(self, **kwargs)
-    IndexDataset.__init__(self, start_idx=start_idx, end_idx=end_idx)
+    def __init__(self, *, start_idx: int, end_idx: int, **kwargs) -> None:
+        GTSRB.__init__(self, **kwargs)
+        IndexDataset.__init__(self, start_idx=start_idx, end_idx=end_idx)
 
 
 class RatioGTSRB(GTSRB, RatioDataset):
-
-def __init__(self, *, ratio: float, **kwargs) -> None:
-    GTSRB.__init__(self, **kwargs)
-    RatioDataset.__init__(self, ratio=ratio)
+    
+    def __init__(self, *, ratio: float, **kwargs) -> None:
+        GTSRB.__init__(self, **kwargs)
+        RatioDataset.__init__(self, ratio=ratio)
 
 
 class IndexRatioGTSRB(GTSRB, IndexRatioDataset):
 
-def __init__(self, *, start_idx: int, end_idx: int, ratio: float,
-             **kwargs) -> None:
-    GTSRB.__init__(self, **kwargs)
-    IndexRatioDataset.__init__(self,
+    def __init__(self, *, start_idx: int, end_idx: int, ratio: float,
+                 **kwargs) -> None:
+        GTSRB.__init__(self, **kwargs)
+        IndexRatioDataset.__init__(self,
                                start_idx=start_idx,
                                end_idx=end_idx,
                                ratio=ratio)
@@ -168,16 +168,16 @@ def __init__(self, *, start_idx: int, end_idx: int, ratio: float,
 
 class PoisonLabelGTSRB(GTSRB, PoisonLabelDataset):
 
-def __init__(self, *, poison_label: int, **kwargs) -> None:
-    GTSRB.__init__(self, **kwargs)
-    PoisonLabelDataset.__init__(self, poison_label=poison_label)
+    def __init__(self, *, poison_label: int, **kwargs) -> None:
+        GTSRB.__init__(self, **kwargs)
+        PoisonLabelDataset.__init__(self, poison_label=poison_label)
 
 
 class RatioPoisonLabelGTSRB(GTSRB, RatioPoisonLabelDataset):
 
-def __init__(self, *, ratio: float, poison_label: int, **kwargs) -> None:
-    GTSRB.__init__(self, **kwargs)
-    RatioPoisonLabelDataset.__init__(self,
-                                     ratio=ratio,
-                                     poison_label=poison_label)
+    def __init__(self, *, ratio: float, poison_label: int, **kwargs) -> None:
+        GTSRB.__init__(self, **kwargs)
+        RatioPoisonLabelDataset.__init__(self,
+                                    ratio=ratio,
+                                    poison_label=poison_label)
  
