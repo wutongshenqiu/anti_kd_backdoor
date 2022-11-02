@@ -2,8 +2,11 @@ from pathlib import Path
 
 from anti_kd_backdoor.config import Config
 from anti_kd_backdoor.trainer import build_trainer
-from anti_kd_backdoor.trainer.anti_kd import (AntiKDTrainer, NetworkWrapper,
-                                              TriggerWrapper)
+from anti_kd_backdoor.trainer.anti_kd import (
+    AntiKDTrainer,
+    NetworkWrapper,
+    TriggerWrapper,
+)
 
 CONFIG_PATH = 'tests/data/config/anti_kd_t-r34_s-r18-v16-mv2_cifar10.py'
 

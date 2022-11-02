@@ -10,8 +10,12 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from anti_kd_backdoor.data import build_dataloader
-from anti_kd_backdoor.utils import (AverageMeter, calc_batch_acc,
-                                    collect_hyperparameters, evaluate_accuracy)
+from anti_kd_backdoor.utils import (
+    AverageMeter,
+    calc_batch_acc,
+    collect_hyperparameters,
+    evaluate_accuracy,
+)
 
 from .anti_kd import BaseWrapper
 

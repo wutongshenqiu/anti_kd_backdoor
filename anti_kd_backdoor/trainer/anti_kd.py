@@ -16,9 +16,14 @@ from torchvision.utils import make_grid
 
 from anti_kd_backdoor.data import build_dataloader
 from anti_kd_backdoor.network import build_network
-from anti_kd_backdoor.utils import (AverageMeter, build_optimizer,
-                                    build_scheduler, calc_batch_acc,
-                                    collect_hyperparameters, evaluate_accuracy)
+from anti_kd_backdoor.utils import (
+    AverageMeter,
+    build_optimizer,
+    build_scheduler,
+    calc_batch_acc,
+    collect_hyperparameters,
+    evaluate_accuracy,
+)
 
 
 # TODO: Name is not proper
