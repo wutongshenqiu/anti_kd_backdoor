@@ -2,8 +2,15 @@ import numpy as np
 from torchvision.datasets import CIFAR10 as TORCH_CIFAR10
 from torchvision.datasets import CIFAR100 as TORCH_CIFAR100
 
-from .base import (DatasetInterface, IndexDataset, IndexRatioDataset,
-                   PoisonLabelDataset, RatioDataset, RatioPoisonLabelDataset)
+from .base import (
+    DatasetInterface,
+    IndexDataset,
+    IndexRatioDataset,
+    PoisonLabelDataset,
+    RangeRatioDataset,
+    RatioDataset,
+    RatioPoisonLabelDataset,
+)
 from .types import XY_TYPE
 
 
@@ -42,6 +49,13 @@ class RatioCIFAR10(CIFAR10, RatioDataset):
     def __init__(self, *, ratio: float, **kwargs) -> None:
         CIFAR10.__init__(self, **kwargs)
         RatioDataset.__init__(self, ratio=ratio)
+
+
+class RangeRatioCIFAR10(CIFAR10, RangeRatioDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], **kwargs) -> None:
+        CIFAR10.__init__(self, **kwargs)
+        RangeRatioDataset.__init__(self, range_ratio=range_ratio)
 
 
 class IndexRatioCIFAR10(CIFAR10, IndexRatioDataset):
@@ -90,6 +104,13 @@ class RatioCIFAR100(CIFAR100, RatioDataset):
     def __init__(self, *, ratio: float, **kwargs) -> None:
         CIFAR100.__init__(self, **kwargs)
         RatioDataset.__init__(self, ratio=ratio)
+
+
+class RangeRatioCIFAR100(CIFAR100, RangeRatioDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], **kwargs) -> None:
+        CIFAR100.__init__(self, **kwargs)
+        RangeRatioDataset.__init__(self, range_ratio=range_ratio)
 
 
 class IndexRatioCIFAR100(CIFAR100, IndexRatioDataset):

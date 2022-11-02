@@ -1,6 +1,6 @@
 import typing
 
-from .types import XY_TYPE
+from .types import X_TYPE, XY_TYPE
 
 
 class IndexFilterMixin:
@@ -49,6 +49,40 @@ class RatioFilterMixin:
             if class2num[ity] <= num_per_class:
                 filtered_x.append(itx)
                 filtered_y.append(ity)
+
+        return filtered_x, filtered_y
+
+
+class RangeRatioFilterMixin:
+    range_ratio: tuple[float, float]
+
+    def filter_by_range_ratio(self, xy: XY_TYPE) -> XY_TYPE:
+        start_ratio = self.range_ratio[0]
+        end_ratio = self.range_ratio[1]
+
+        if not (0 <= start_ratio < end_ratio <= 1):
+            raise ValueError('Expect 0 <= `start_ratio` < `end_ratio` <= 1, '
+                             f'but got: 0 <= {start_ratio} < {end_ratio} <= 1')
+
+        label2x: dict[int, X_TYPE] = dict()
+        for itx, ity in zip(*xy):
+            try:
+                label2x[ity].append(itx)
+            except KeyError:
+                label2x[ity] = [itx]
+
+        label2ratio_x: dict[int, X_TYPE] = dict()
+        for label, x in label2x.items():
+            start_idx = int(len(x) * start_ratio)
+            end_idx = int(len(x) * end_ratio)
+            ratio_x = x[start_idx:end_idx]
+            label2ratio_x[label] = ratio_x
+
+        filtered_x = []
+        filtered_y = []
+        for label, ratio_x in label2ratio_x.items():
+            filtered_x.extend(ratio_x)
+            filtered_y.extend([label] * len(ratio_x))
 
         return filtered_x, filtered_y
 

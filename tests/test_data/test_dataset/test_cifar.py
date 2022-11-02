@@ -36,13 +36,13 @@ def test_xy(dataset_type: str) -> None:
     old_y = y.copy()
 
     cifar.set_xy(xy)
-    assert np.equal(cifar.data, old_x).all()
+    assert all([np.array_equal(nx, ox) for nx, ox in zip(cifar.data, old_x)])
     assert cifar.targets == old_y
 
     x = x[:cifar.num_classes]
     y = y[:cifar.num_classes]
     cifar.set_xy((x, y))
-    assert np.equal(cifar.data, x).all()
+    assert all([np.array_equal(nx, ox) for nx, ox in zip(cifar.data, x)])
     assert cifar.targets == y
     assert cifar.num_classes == len(set(y))
     assert len(cifar.data.shape) == 4
@@ -89,9 +89,56 @@ def test_ratio(ratio: float, dataset_type: str) -> None:
         return
     cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
 
+    assert cifar.num_classes == cifar.raw_num_classes
     assert len(cifar.targets) == \
         int(CIFAR_TESTSET_NUM / cifar.num_classes * ratio) * cifar.num_classes
     assert len(cifar.data.shape) == 4
+
+
+@pytest.mark.parametrize('range_ratio', [(-1, 0.2), (0, 2), (0.1, 0.1),
+                                         (0.5, 0.2), (0.1, 0.5), (0, 1)])
+@pytest.mark.parametrize('dataset_type',
+                         ['RangeRatioCIFAR10', 'RangeRatioCIFAR100'])
+def test_range_ratio(range_ratio: tuple[float, float],
+                     dataset_type: str) -> None:
+    kwargs = dict(range_ratio=range_ratio)
+
+    start_ratio = range_ratio[0]
+    end_ratio = range_ratio[1]
+    if not (0 <= start_ratio < end_ratio <= 1):
+        with pytest.raises(ValueError):
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
+        return
+
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
+    assert cifar.num_classes == cifar.raw_num_classes
+    assert len(cifar.targets) == \
+        round(CIFAR_TESTSET_NUM * (end_ratio - start_ratio))
+    assert len(cifar.data.shape) == 4
+
+
+@pytest.mark.parametrize(['range_ratio1', 'range_ratio2'],
+                         [((0, 0.5), (0.5, 1)), ((0, 0.6), (0.4, 1)),
+                          ((0, 0.7), (0.3, 1)), ((0, 0.5), (0, 1))])
+@pytest.mark.parametrize('dataset_type',
+                         ['RangeRatioCIFAR10', 'RangeRatioCIFAR100'])
+def test_range_ratio_intersection(range_ratio1: tuple[float, float],
+                                  range_ratio2: tuple[float, float],
+                                  dataset_type: str) -> None:
+
+    cifar1 = build_cifar_fake_dataset(dataset_type=dataset_type,
+                                      range_ratio=range_ratio1,
+                                      cache_xy=True)
+    cifar2 = build_cifar_fake_dataset(dataset_type=dataset_type,
+                                      range_ratio=range_ratio2,
+                                      cache_xy=True)
+
+    cat_x = np.concatenate([cifar1.data, cifar2.data], axis=0)
+    unique_x = np.unique(cat_x, axis=0)
+    intersection_number = cat_x.shape[0] - unique_x.shape[0]
+
+    intersection_ratio = max(0, range_ratio1[1] - range_ratio2[0])
+    assert round(intersection_ratio * CIFAR_TESTSET_NUM) == intersection_number
 
 
 @pytest.mark.parametrize('dataset_type',

@@ -2,33 +2,42 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from anti_kd_backdoor.data.dataset.base import (DatasetInterface, IndexDataset,
-                                                IndexRatioDataset,
-                                                PoisonLabelDataset,
-                                                RatioDataset,
-                                                RatioPoisonLabelDataset)
+from anti_kd_backdoor.data.dataset.base import (
+    DatasetInterface,
+    IndexDataset,
+    IndexRatioDataset,
+    PoisonLabelDataset,
+    RangeRatioDataset,
+    RatioDataset,
+    RatioPoisonLabelDataset,
+)
 from anti_kd_backdoor.data.dataset.types import XY_TYPE
 
 
 class FakeDataset(DatasetInterface, Dataset):
+    cache: dict[tuple, tuple[torch.Tensor, list[int]]] = dict()
 
     def __init__(self,
                  *,
                  x_shape: tuple[int, int, int] = (3, 32, 32),
                  y_range: tuple[int, int] = (0, 9),
-                 nums: int = 10000) -> None:
+                 nums: int = 10000,
+                 cache_xy: bool = False) -> None:
         self._nums = nums
         self._x_shape = x_shape
         self._y_range = y_range
         self._raw_num_classes = y_range[1] - y_range[0] + 1
 
-        self.data = torch.rand((nums, *x_shape))
-        num_per_class = nums // self._raw_num_classes
-        self.targets = [
-            i for _ in range(num_per_class)
-            for i in range(self._raw_num_classes)
-        ]
-        self.targets.extend([y_range[0]] * (nums - len(self.targets)))
+        if cache_xy:
+            cache_key = (x_shape, y_range, nums)
+            if cache_key not in FakeDataset.cache:
+                x, y = self._prepare_xy()
+                FakeDataset.cache[cache_key] = (x, y)
+            x, y = FakeDataset.cache[cache_key]
+        else:
+            x, y = self._prepare_xy()
+
+        self.data, self.targets = x, y
 
     def __len__(self) -> int:
         return len(self.targets)
@@ -40,7 +49,7 @@ class FakeDataset(DatasetInterface, Dataset):
         return x, y
 
     def get_xy(self) -> XY_TYPE:
-        return self.data.tolist(), self.targets.copy()
+        return list(self.data), self.targets.copy()
 
     def set_xy(self, xy: XY_TYPE) -> None:
         x, y = xy
@@ -57,6 +66,17 @@ class FakeDataset(DatasetInterface, Dataset):
     def raw_num_classes(self) -> int:
         return self._raw_num_classes
 
+    def _prepare_xy(self) -> tuple[torch.Tensor, list[int]]:
+        x = torch.rand((self._nums, *self._x_shape))
+        num_per_class = self._nums // self._raw_num_classes
+        y = [
+            i for _ in range(num_per_class)
+            for i in range(self._raw_num_classes)
+        ]
+        y.extend([self._y_range[0]] * (self._nums - len(y)))
+
+        return x, y
+
 
 class IndexFakeDataset(FakeDataset, IndexDataset):
 
@@ -70,6 +90,13 @@ class RatioFakeDataset(FakeDataset, RatioDataset):
     def __init__(self, *, ratio: float, **kwargs) -> None:
         FakeDataset.__init__(self, **kwargs)
         RatioDataset.__init__(self, ratio=ratio)
+
+
+class RangeRatioFakeDataset(FakeDataset, RangeRatioDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], **kwargs) -> None:
+        FakeDataset.__init__(self, **kwargs)
+        RangeRatioDataset.__init__(self, range_ratio=range_ratio)
 
 
 class IndexRatioFakeDataset(FakeDataset, IndexRatioDataset):
@@ -103,6 +130,7 @@ FAKE_DATASETS_MAPPING = {
     'FakeDataset': FakeDataset,
     'IndexFakeDataset': IndexFakeDataset,
     'RatioFakeDataset': RatioFakeDataset,
+    'RangeRatioFakeDataset': RangeRatioFakeDataset,
     'IndexRatioFakeDataset': IndexRatioFakeDataset,
     'PoisonLabelFakeDataset': PoisonLabelFakeDataset,
     'RatioPoisonLabelFakeDataset': RatioPoisonLabelFakeDataset

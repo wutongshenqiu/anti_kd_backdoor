@@ -2,22 +2,36 @@ import copy
 
 from torchvision import transforms
 
-from .cifar import (CIFAR10, CIFAR100, IndexCIFAR10, IndexCIFAR100,
-                    IndexRatioCIFAR10, IndexRatioCIFAR100, PoisonLabelCIFAR10,
-                    PoisonLabelCIFAR100, RatioCIFAR10, RatioCIFAR100,
-                    RatioPoisonLabelCIFAR10, RatioPoisonLabelCIFAR100)
+from .cifar import (
+    CIFAR10,
+    CIFAR100,
+    IndexCIFAR10,
+    IndexCIFAR100,
+    IndexRatioCIFAR10,
+    IndexRatioCIFAR100,
+    PoisonLabelCIFAR10,
+    PoisonLabelCIFAR100,
+    RangeRatioCIFAR10,
+    RangeRatioCIFAR100,
+    RatioCIFAR10,
+    RatioCIFAR100,
+    RatioPoisonLabelCIFAR10,
+    RatioPoisonLabelCIFAR100,
+)
 from .types import DatasetProtocol
 
 DATASETS_MAPPING = {
     'CIFAR10': CIFAR10,
     'IndexCIFAR10': IndexCIFAR10,
     'RatioCIFAR10': RatioCIFAR10,
+    'RangeRatioCIFAR10': RangeRatioCIFAR10,
     'IndexRatioCIFAR10': IndexRatioCIFAR10,
     'PoisonLabelCIFAR10': PoisonLabelCIFAR10,
     'RatioPoisonLabelCIFAR10': RatioPoisonLabelCIFAR10,
     'CIFAR100': CIFAR100,
     'IndexCIFAR100': IndexCIFAR100,
     'RatioCIFAR100': RatioCIFAR100,
+    'RangeRatioCIFAR100': RangeRatioCIFAR100,
     'IndexRatioCIFAR100': IndexRatioCIFAR100,
     'PoisonLabelCIFAR100': PoisonLabelCIFAR100,
     'RatioPoisonLabelCIFAR100': RatioPoisonLabelCIFAR100

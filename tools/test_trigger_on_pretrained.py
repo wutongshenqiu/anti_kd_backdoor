@@ -111,10 +111,11 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
 
-    parser.add_argument('--work_dir',
-                        '-w',
+    parser.add_argument('--work_dir_list',
+                        '-wl',
                         type=Path,
-                        help='Path of work directory')
+                        nargs='*',
+                        help='List of path of work directory')
     parser.add_argument(
         '--base_dir',
         '-b',
@@ -159,14 +160,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    if not ((args.work_dir is None) ^ (args.base_dir is None)):
-        raise ValueError(
-            'One and only one of `work_dir` and `base_dir` should be specified'
-        )
+    if not ((args.work_dir_list is None) ^ (args.base_dir is None)):
+        raise ValueError('One and only one of `work_dir_list` and `base_dir` '
+                         'should be specified')
 
-    if args.work_dir is not None:
-        assert args.work_dir.exists()
-        work_dir_list = [args.work_dir]
+    if args.work_dir_list is not None:
+        work_dir_list = args.work_dir_list
+        assert all([work_dir.exists() for work_dir in work_dir_list])
     else:
         assert args.base_dir.exists()
         work_dir_list = collect_sub_dirs(args.base_dir)

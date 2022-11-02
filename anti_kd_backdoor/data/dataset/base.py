@@ -1,6 +1,11 @@
 import abc
 
-from .mixins import IndexFilterMixin, PoisonLabelMixin, RatioFilterMixin
+from .mixins import (
+    IndexFilterMixin,
+    PoisonLabelMixin,
+    RangeRatioFilterMixin,
+    RatioFilterMixin,
+)
 from .types import XY_TYPE
 
 
@@ -43,6 +48,16 @@ class RatioDataset(DatasetInterface, RatioFilterMixin):
 
         xy = self.get_xy()
         filtered_xy = self.filter_by_ratio(xy)
+        self.set_xy(filtered_xy)
+
+
+class RangeRatioDataset(DatasetInterface, RangeRatioFilterMixin):
+
+    def __init__(self, *, range_ratio: tuple[float, float]) -> None:
+        self.range_ratio = range_ratio
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_range_ratio(xy)
         self.set_xy(filtered_xy)
 
 
