@@ -13,6 +13,8 @@ from .cifar import (
     PoisonLabelCIFAR100,
     RangeRatioCIFAR10,
     RangeRatioCIFAR100,
+    RangeRatioPoisonLabelCIFAR10,
+    RangeRatioPoisonLabelCIFAR100,
     RatioCIFAR10,
     RatioCIFAR100,
     RatioPoisonLabelCIFAR10,
@@ -27,6 +29,7 @@ DATASETS_MAPPING = {
     'RangeRatioCIFAR10': RangeRatioCIFAR10,
     'IndexRatioCIFAR10': IndexRatioCIFAR10,
     'PoisonLabelCIFAR10': PoisonLabelCIFAR10,
+    'RangeRatioPoisonLabelCIFAR10': RangeRatioPoisonLabelCIFAR10,
     'RatioPoisonLabelCIFAR10': RatioPoisonLabelCIFAR10,
     'CIFAR100': CIFAR100,
     'IndexCIFAR100': IndexCIFAR100,
@@ -34,7 +37,8 @@ DATASETS_MAPPING = {
     'RangeRatioCIFAR100': RangeRatioCIFAR100,
     'IndexRatioCIFAR100': IndexRatioCIFAR100,
     'PoisonLabelCIFAR100': PoisonLabelCIFAR100,
-    'RatioPoisonLabelCIFAR100': RatioPoisonLabelCIFAR100
+    'RatioPoisonLabelCIFAR100': RatioPoisonLabelCIFAR100,
+    'RangeRatioPoisonLabelCIFAR100': RangeRatioPoisonLabelCIFAR100
 }
 
 

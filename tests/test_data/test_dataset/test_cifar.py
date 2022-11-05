@@ -200,7 +200,33 @@ def test_ratio_poison_label(ratio: float, poison_label: int,
     cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
     assert cifar.poison_label == poison_label
 
-    assert len(cifar) == CIFAR_TESTSET_NUM * ratio
+    assert len(cifar) == round(CIFAR_TESTSET_NUM * ratio)
+    assert cifar.num_classes == 1
+    assert all(map(lambda x: x == poison_label, cifar.targets))
+    assert len(cifar.data.shape) == 4
+
+
+@pytest.mark.parametrize(
+    'dataset_type',
+    ['RangeRatioPoisonLabelCIFAR10', 'RangeRatioPoisonLabelCIFAR100'])
+@pytest.mark.parametrize('poison_label', [-1, 1, 101])
+@pytest.mark.parametrize('range_ratio', [(0, 0.2), (0.2, 0.5), (0.5, 1),
+                                         (0.5, 0.2)])
+def test_range_ratio_poison_label(range_ratio: tuple[float,
+                                                     float], poison_label: int,
+                                  dataset_type: str) -> None:
+    kwargs = dict(range_ratio=range_ratio, poison_label=poison_label)
+
+    if poison_label < 0 or poison_label >= 100 or \
+            not (0 <= range_ratio[0] < range_ratio[1] <= 1):
+        with pytest.raises(ValueError):
+            _ = build_cifar_fake_dataset(dataset_type, **kwargs)
+        return
+    cifar = build_cifar_fake_dataset(dataset_type, **kwargs)
+    assert cifar.poison_label == poison_label
+
+    assert len(cifar) == round(CIFAR_TESTSET_NUM *
+                               (range_ratio[1] - range_ratio[0]))
     assert cifar.num_classes == 1
     assert all(map(lambda x: x == poison_label, cifar.targets))
     assert len(cifar.data.shape) == 4

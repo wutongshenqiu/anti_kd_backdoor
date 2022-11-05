@@ -8,6 +8,7 @@ from .base import (
     IndexRatioDataset,
     PoisonLabelDataset,
     RangeRatioDataset,
+    RangeRatioPoisonLabelDataset,
     RatioDataset,
     RatioPoisonLabelDataset,
 )
@@ -85,6 +86,16 @@ class RatioPoisonLabelCIFAR10(CIFAR10, RatioPoisonLabelDataset):
                                          poison_label=poison_label)
 
 
+class RangeRatioPoisonLabelCIFAR10(CIFAR10, RangeRatioPoisonLabelDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], poison_label: int,
+                 **kwargs) -> None:
+        CIFAR10.__init__(self, **kwargs)
+        RangeRatioPoisonLabelDataset.__init__(self,
+                                              range_ratio=range_ratio,
+                                              poison_label=poison_label)
+
+
 class CIFAR100(CIFAR10, TORCH_CIFAR100):
 
     @property
@@ -138,3 +149,13 @@ class RatioPoisonLabelCIFAR100(CIFAR100, RatioPoisonLabelDataset):
         RatioPoisonLabelDataset.__init__(self,
                                          ratio=ratio,
                                          poison_label=poison_label)
+
+
+class RangeRatioPoisonLabelCIFAR100(CIFAR100, RangeRatioPoisonLabelDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], poison_label: int,
+                 **kwargs) -> None:
+        CIFAR100.__init__(self, **kwargs)
+        RangeRatioPoisonLabelDataset.__init__(self,
+                                              range_ratio=range_ratio,
+                                              poison_label=poison_label)

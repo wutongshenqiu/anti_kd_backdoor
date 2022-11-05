@@ -3,9 +3,13 @@ import copy
 import torch
 from torch.nn import Module
 
-from . import cifar, trigger
+from . import chenyaofo_cifar_models, cifar, trigger
 
-_ARCH_MAPPING = {'cifar': cifar, 'trigger': trigger}
+_ARCH_MAPPING = {
+    'cifar': cifar,
+    'trigger': trigger,
+    'chenyaofo_cifar_models': chenyaofo_cifar_models
+}
 
 
 def build_network(network_cfg: dict) -> Module:

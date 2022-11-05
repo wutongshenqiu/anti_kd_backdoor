@@ -8,6 +8,7 @@ from anti_kd_backdoor.data.dataset.base import (
     IndexRatioDataset,
     PoisonLabelDataset,
     RangeRatioDataset,
+    RangeRatioPoisonLabelDataset,
     RatioDataset,
     RatioPoisonLabelDataset,
 )
@@ -126,6 +127,17 @@ class RatioPoisonLabelFakeDataset(FakeDataset, RatioPoisonLabelDataset):
                                          poison_label=poison_label)
 
 
+class RangeRatioPoisonLabelFakeDataset(FakeDataset,
+                                       RangeRatioPoisonLabelDataset):
+
+    def __init__(self, *, range_ratio: tuple[float, float], poison_label: int,
+                 **kwargs) -> None:
+        FakeDataset.__init__(self, **kwargs)
+        RangeRatioPoisonLabelDataset.__init__(self,
+                                              range_ratio=range_ratio,
+                                              poison_label=poison_label)
+
+
 FAKE_DATASETS_MAPPING = {
     'FakeDataset': FakeDataset,
     'IndexFakeDataset': IndexFakeDataset,
@@ -133,7 +145,8 @@ FAKE_DATASETS_MAPPING = {
     'RangeRatioFakeDataset': RangeRatioFakeDataset,
     'IndexRatioFakeDataset': IndexRatioFakeDataset,
     'PoisonLabelFakeDataset': PoisonLabelFakeDataset,
-    'RatioPoisonLabelFakeDataset': RatioPoisonLabelFakeDataset
+    'RatioPoisonLabelFakeDataset': RatioPoisonLabelFakeDataset,
+    'RangeRatioPoisonLabelFakeDataset': RangeRatioPoisonLabelFakeDataset
 }
 
 

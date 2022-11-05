@@ -95,3 +95,17 @@ class RatioPoisonLabelDataset(DatasetInterface, RatioFilterMixin,
         filtered_xy = self.filter_by_ratio(xy)
         filtered_xy = self.to_target_label(filtered_xy)
         self.set_xy(filtered_xy)
+
+
+class RangeRatioPoisonLabelDataset(DatasetInterface, RangeRatioFilterMixin,
+                                   PoisonLabelMixin):
+
+    def __init__(self, *, range_ratio: tuple[float, float],
+                 poison_label: int) -> None:
+        self.range_ratio = range_ratio
+        self.poison_label = poison_label
+
+        xy = self.get_xy()
+        filtered_xy = self.filter_by_range_ratio(xy)
+        filtered_xy = self.to_target_label(filtered_xy)
+        self.set_xy(filtered_xy)
