@@ -13,12 +13,19 @@ from .cifar import (
     PoisonLabelCIFAR100,
     RangeRatioCIFAR10,
     RangeRatioCIFAR100,
-    RangeRatioPoisonLabelCIFAR10,
-    RangeRatioPoisonLabelCIFAR100,
     RatioCIFAR10,
     RatioCIFAR100,
     RatioPoisonLabelCIFAR10,
     RatioPoisonLabelCIFAR100,
+)
+from .gtsrb import (
+    GTSRB,
+    IndexGTSRB,
+    IndexRatioGTSRB,
+    PoisonLabelGTSRB,
+    RangeRatioGTSRB,
+    RatioGTSRB,
+    RatioPoisonLabelGTSRB,
 )
 from .types import DatasetProtocol
 
@@ -29,7 +36,6 @@ DATASETS_MAPPING = {
     'RangeRatioCIFAR10': RangeRatioCIFAR10,
     'IndexRatioCIFAR10': IndexRatioCIFAR10,
     'PoisonLabelCIFAR10': PoisonLabelCIFAR10,
-    'RangeRatioPoisonLabelCIFAR10': RangeRatioPoisonLabelCIFAR10,
     'RatioPoisonLabelCIFAR10': RatioPoisonLabelCIFAR10,
     'CIFAR100': CIFAR100,
     'IndexCIFAR100': IndexCIFAR100,
@@ -38,7 +44,13 @@ DATASETS_MAPPING = {
     'IndexRatioCIFAR100': IndexRatioCIFAR100,
     'PoisonLabelCIFAR100': PoisonLabelCIFAR100,
     'RatioPoisonLabelCIFAR100': RatioPoisonLabelCIFAR100,
-    'RangeRatioPoisonLabelCIFAR100': RangeRatioPoisonLabelCIFAR100
+    'GTSRB': GTSRB,
+    'IndexGTSRB': IndexGTSRB,
+    'RatioGTSRB': RatioGTSRB,
+    'RangeRatioGTSRB': RangeRatioGTSRB,
+    'IndexRatioGTSRB': IndexRatioGTSRB,
+    'PoisonLabelGTSRB': PoisonLabelGTSRB,
+    'RatioPoisonLabelGTSRB': RatioPoisonLabelGTSRB,
 }
 
 
