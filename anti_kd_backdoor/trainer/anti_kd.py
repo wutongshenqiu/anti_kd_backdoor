@@ -155,7 +155,7 @@ class AntiKDTrainer(Module):
                  temperature: float,
                  alpha: float,
                  work_dirs: str,
-                 device: str = 'cuda',
+                 device: str = 'cuda' if torch.cuda.is_available() else 'cpu',
                  epochs_per_validation: int = 5,
                  train_student_with_kd: bool = True,
                  auto_resume: bool = True) -> None:
