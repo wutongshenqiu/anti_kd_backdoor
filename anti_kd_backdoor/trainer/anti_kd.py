@@ -197,9 +197,10 @@ class AntiKDTrainer(Module):
         self._current_epoch = 0
 
         if auto_resume:
+            # FIXME
             # put model to cuda before build optimizer
             # https://github.com/pytorch/pytorch/issues/2830
-            self.to(self._device)
+            # self.to(self._device)
             self._try_resume()
 
     def train(self) -> None:
