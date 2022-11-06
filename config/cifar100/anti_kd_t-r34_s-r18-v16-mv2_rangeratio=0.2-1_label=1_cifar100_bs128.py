@@ -129,4 +129,5 @@ trainer = dict(
     save_interval=5,
     temperature=1.0,
     alpha=1.0,
-    device='cuda')
+    device='cuda',
+    auto_resume=True)

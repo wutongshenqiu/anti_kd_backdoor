@@ -157,7 +157,8 @@ class AntiKDTrainer(Module):
                  work_dirs: str,
                  device: str = 'cuda',
                  epochs_per_validation: int = 5,
-                 train_student_with_kd: bool = True) -> None:
+                 train_student_with_kd: bool = True,
+                 auto_resume: bool = True) -> None:
         hyperparameters = collect_hyperparameters()
         self._hp = hyperparameters
 
@@ -195,9 +196,15 @@ class AntiKDTrainer(Module):
 
         self._current_epoch = 0
 
+        if auto_resume:
+            # put model to cuda before build optimizer
+            # https://github.com/pytorch/pytorch/issues/2830
+            self.to(self._device)
+            self._try_resume()
+
     def train(self) -> None:
-        pbar = tqdm.tqdm(total=self._epochs)
-        prev_ckpt_path: Optional[Path] = None
+        pbar = tqdm.tqdm(total=self._epochs - self._current_epoch)
+        prev_ckpt_path: Optional[Path] = self.find_latest_checkpoint()
 
         while self._current_epoch < self._epochs:
             self._current_epoch += 1
@@ -556,3 +563,41 @@ class AntiKDTrainer(Module):
 
         save_obj = dict(stats=self.stats, state_dict=self.state_dict())
         torch.save(save_obj, ckpt_path)
+
+    def load_checkpoint(self, ckpt_path: str | Path) -> None:
+        if isinstance(ckpt_path, str):
+            ckpt_path = Path(ckpt_path)
+        if not ckpt_path.exists():
+            raise ValueError(f'Path `{ckpt_path}` does not exist')
+
+        print(f'Load from checkpoint: {ckpt_path}')
+
+        load_obj = torch.load(ckpt_path, map_location='cpu')
+        load_stats = load_obj['stats']
+        if (old_hp := load_stats['hyperparameters']) != self._hp:
+            print(f'Hyperparameters not same.\n '
+                  f'Previous: {old_hp} \n'
+                  f'new: {self._hp}')
+
+        self._current_epoch = load_stats['runtime_stats']
+        self.load_state_dict(load_obj['state_dict'])
+
+    def find_latest_checkpoint(self) -> Optional[Path]:
+        ckpt_dir = self._ckpt_dirs
+
+        ckpt_path_list = [
+            x for x in ckpt_dir.glob('*.pth') if x.name.startswith('all')
+        ]
+        if len(ckpt_path_list) == 0:
+            print('Unable to find checkpoint')
+            return None
+
+        latest_ckpt_path = max(ckpt_path_list,
+                               key=lambda x: int(x.stem.split('=')[1]))
+
+        return latest_ckpt_path
+
+    def _try_resume(self) -> None:
+        latest_ckpt_path = self.find_latest_checkpoint()
+        if latest_ckpt_path is not None:
+            self.load_checkpoint(latest_ckpt_path)

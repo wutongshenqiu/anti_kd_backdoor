@@ -177,3 +177,21 @@ class NormalTrainer(Module):
 
         save_obj = dict(stats=self.stats, state_dict=self.state_dict())
         torch.save(save_obj, ckpt_path)
+
+    def load_checkpoint(self, ckpt_path: str | Path) -> None:
+        if isinstance(ckpt_path, str):
+            ckpt_path = Path(ckpt_path)
+        if not ckpt_path.exists():
+            raise ValueError(f'Path `{ckpt_path}` does not exist')
+
+        print(f'Load from checkpoint: {ckpt_path}')
+
+        load_obj = torch.load(ckpt_path, map_location='cpu')
+        load_stats = load_obj['stats']
+        if (old_hp := load_stats['hyperparameters']) != self._hp:
+            print(f'Hyperparameters not same.\n '
+                  f'Previous: {old_hp} \n'
+                  f'new: {self._hp}')
+
+        self._current_epoch = load_stats['runtime_stats']
+        self.load_state_dict(load_obj['state_dict'])
