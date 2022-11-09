@@ -20,6 +20,10 @@ addict = "^2.4.0"
 yapf = "^0.32.0"
 tensorboard = "^2.10.1"
 tqdm = "^4.64.1"
+timm = "^0.6.11"
+geotorch = "^0.3.0"
+torchdiffeq = "^0.2.3"
+pandas = "^1.5.1"
 
 
 [tool.poetry.group.dev.dependencies]

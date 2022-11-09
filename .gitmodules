@@ -1,3 +1,9 @@
 [submodule "third_party/pytorch-cifar-models"]
 	path = third_party/pytorch-cifar-models
 	url = https://github.com/chenyaofo/pytorch-cifar-models.git
+[submodule "third_party/robustbench"]
+	path = third_party/robustbench
+	url = https://github.com/RobustBench/robustbench.git
+[submodule "third_party/auto-attack"]
+	path = third_party/auto-attack
+	url = https://github.com/fra31/auto-attack.git
