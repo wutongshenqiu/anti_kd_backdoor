@@ -4,6 +4,8 @@ poison_dataest_type = 'PoisonLabelGTSRB'
 dataset_mean = (0.3403, 0.3121, 0.3214)
 dataset_std = (0.2724, 0.2608, 0.2669)
 
+max_epochs = 50
+
 trainer = dict(
     type='AntiKDTrainer',
     teacher=dict(network=dict(arch='cifar',
@@ -13,7 +15,7 @@ trainer = dict(
                                 lr=0.2,
                                 momentum=0.9,
                                 weight_decay=5e-4),
-                 scheduler=dict(type='CosineAnnealingLR', T_max=100),
+                 scheduler=dict(type='CosineAnnealingLR', T_max=max_epochs),
                  lambda_t=0.1,
                  lambda_mask=1e-4,
                  trainable_when_training_trigger=False),
@@ -25,7 +27,8 @@ trainer = dict(
                                      lr=0.2,
                                      momentum=0.9,
                                      weight_decay=5e-4),
-                      scheduler=dict(type='CosineAnnealingLR', T_max=100),
+                      scheduler=dict(type='CosineAnnealingLR',
+                                     T_max=max_epochs),
                       lambda_t=1e-2,
                       lambda_mask=1e-4,
                       trainable_when_training_trigger=False),
@@ -36,7 +39,7 @@ trainer = dict(
                                   lr=0.2,
                                   momentum=0.9,
                                   weight_decay=5e-4),
-                   scheduler=dict(type='CosineAnnealingLR', T_max=100),
+                   scheduler=dict(type='CosineAnnealingLR', T_max=max_epochs),
                    lambda_t=1e-2,
                    lambda_mask=1e-4,
                    trainable_when_training_trigger=False),
@@ -47,7 +50,8 @@ trainer = dict(
                                          lr=0.2,
                                          momentum=0.9,
                                          weight_decay=5e-4),
-                          scheduler=dict(type='CosineAnnealingLR', T_max=100),
+                          scheduler=dict(type='CosineAnnealingLR',
+                                         T_max=max_epochs),
                           lambda_t=1e-2,
                           lambda_mask=1e-4,
                           trainable_when_training_trigger=False),
@@ -121,8 +125,9 @@ trainer = dict(
                                 batch_size=128,
                                 num_workers=4,
                                 pin_memory=True),
-    epochs=100,
+    epochs=max_epochs,
     save_interval=5,
+    epochs_per_validation=1,
     temperature=1.0,
     alpha=1.0,
     device='cuda')
