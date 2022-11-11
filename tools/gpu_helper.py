@@ -40,6 +40,7 @@ class GpuHelper:
     def gpu_stats(self) -> list[dict]:
         return GPUStatCollection.new_query().jsonify()['gpus']
 
+    # FIXME: this won't work since it should be set in termianl
     def set_visiable_devices(self, indices: Iterable[int]) -> None:
         import os
 

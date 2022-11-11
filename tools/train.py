@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import torch
 from gpu_helper import GpuHelper
 
 from anti_kd_backdoor.config import Config, DictAction
@@ -36,7 +37,7 @@ if __name__ == '__main__':
         gpu_helper = GpuHelper(**asg_params)
         available_indices = gpu_helper.wait_for_available_indices()
         print(f'Find available gpu indices: {available_indices}')
-        gpu_helper.set_visiable_devices(available_indices)
+        torch.cuda.set_device(available_indices[0])
 
     config_path: Path = args.config
     config = Config.fromfile(config_path)

@@ -200,7 +200,8 @@ class AntiKDTrainer(Module):
             # FIXME
             # put model to cuda before build optimizer
             # https://github.com/pytorch/pytorch/issues/2830
-            # self.to(self._device)
+            if torch.cuda.is_available():
+                self.to(self._device)
             self._try_resume()
 
     def train(self) -> None:
