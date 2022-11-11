@@ -62,7 +62,8 @@ trainer = dict(
                                              split='train',
                                              download=True,
                                              transform=[
-                                                 dict(type='Resize', size=32),
+                                                 dict(type='Resize',
+                                                      size=(32, 32)),
                                                  dict(type='ToTensor'),
                                                  dict(type='Normalize',
                                                       mean=dataset_mean,
@@ -77,7 +78,8 @@ trainer = dict(
                                             split='test',
                                             download=True,
                                             transform=[
-                                                dict(type='Resize', size=32),
+                                                dict(type='Resize',
+                                                     size=(32, 32)),
                                                 dict(type='ToTensor'),
                                                 dict(type='Normalize',
                                                      mean=dataset_mean,
@@ -92,7 +94,8 @@ trainer = dict(
                                               split='train',
                                               download=True,
                                               transform=[
-                                                  dict(type='Resize', size=32),
+                                                  dict(type='Resize',
+                                                       size=(32, 32)),
                                                   dict(type='ToTensor'),
                                                   dict(type='Normalize',
                                                        mean=dataset_mean,
@@ -108,7 +111,8 @@ trainer = dict(
                                              split='test',
                                              download=True,
                                              transform=[
-                                                 dict(type='Resize', size=32),
+                                                 dict(type='Resize',
+                                                      size=(32, 32)),
                                                  dict(type='ToTensor'),
                                                  dict(type='Normalize',
                                                       mean=dataset_mean,
