@@ -1,8 +1,8 @@
 num_classes = 43
 dataest_type = 'GTSRB'
 poison_dataest_type = 'PoisonLabelGTSRB'
-dataset_mean = (0.3403, 0.3121, 0.3214)
-dataset_std = (0.2724, 0.2608, 0.2669)
+# dataset_mean = (0.3403, 0.3121, 0.3214)
+# dataset_std = (0.2724, 0.2608, 0.2669)
 
 max_epochs = 50
 
@@ -61,67 +61,47 @@ trainer = dict(
                  mask_clip_range=(0., 1.),
                  trigger_clip_range=(-1., 1.),
                  mask_penalty_norm=2),
-    clean_train_dataloader=dict(dataset=dict(type=dataest_type,
-                                             root='data',
-                                             split='train',
-                                             download=True,
-                                             transform=[
-                                                 dict(type='Resize',
-                                                      size=(32, 32)),
-                                                 dict(type='ToTensor'),
-                                                 dict(type='Normalize',
-                                                      mean=dataset_mean,
-                                                      std=dataset_std)
-                                             ]),
+    clean_train_dataloader=dict(dataset=dict(
+        type=dataest_type,
+        root='data',
+        split='train',
+        download=True,
+        transform=[dict(type='Resize', size=(32, 32)),
+                   dict(type='ToTensor')]),
                                 batch_size=128,
                                 num_workers=4,
                                 pin_memory=True,
                                 shuffle=True),
-    clean_test_dataloader=dict(dataset=dict(type=dataest_type,
-                                            root='data',
-                                            split='test',
-                                            download=True,
-                                            transform=[
-                                                dict(type='Resize',
-                                                     size=(32, 32)),
-                                                dict(type='ToTensor'),
-                                                dict(type='Normalize',
-                                                     mean=dataset_mean,
-                                                     std=dataset_std)
-                                            ]),
+    clean_test_dataloader=dict(dataset=dict(
+        type=dataest_type,
+        root='data',
+        split='test',
+        download=True,
+        transform=[dict(type='Resize', size=(32, 32)),
+                   dict(type='ToTensor')]),
                                batch_size=128,
                                num_workers=4,
                                pin_memory=True),
-    poison_train_dataloader=dict(dataset=dict(type=poison_dataest_type,
-                                              poison_label=1,
-                                              root='data',
-                                              split='train',
-                                              download=True,
-                                              transform=[
-                                                  dict(type='Resize',
-                                                       size=(32, 32)),
-                                                  dict(type='ToTensor'),
-                                                  dict(type='Normalize',
-                                                       mean=dataset_mean,
-                                                       std=dataset_std)
-                                              ]),
+    poison_train_dataloader=dict(dataset=dict(
+        type=poison_dataest_type,
+        poison_label=1,
+        root='data',
+        split='train',
+        download=True,
+        transform=[dict(type='Resize', size=(32, 32)),
+                   dict(type='ToTensor')]),
                                  batch_size=128,
                                  num_workers=4,
                                  pin_memory=True,
                                  shuffle=True),
-    poison_test_dataloader=dict(dataset=dict(type=poison_dataest_type,
-                                             poison_label=1,
-                                             root='data',
-                                             split='test',
-                                             download=True,
-                                             transform=[
-                                                 dict(type='Resize',
-                                                      size=(32, 32)),
-                                                 dict(type='ToTensor'),
-                                                 dict(type='Normalize',
-                                                      mean=dataset_mean,
-                                                      std=dataset_std)
-                                             ]),
+    poison_test_dataloader=dict(dataset=dict(
+        type=poison_dataest_type,
+        poison_label=1,
+        root='data',
+        split='test',
+        download=True,
+        transform=[dict(type='Resize', size=(32, 32)),
+                   dict(type='ToTensor')]),
                                 batch_size=128,
                                 num_workers=4,
                                 pin_memory=True),
