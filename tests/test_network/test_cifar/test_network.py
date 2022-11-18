@@ -5,7 +5,10 @@ from anti_kd_backdoor.network import build_network
 
 _AVAILABLE_CIFAR_NETWORKS = [
     'mobilenet_v2', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-    'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19'
+    'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'mobilenetv2_x0_5',
+    'mobilenetv2_x0_75', 'mobilenetv2_x1_0', 'mobilenetv2_x1_4', 'repvgg_a0',
+    'repvgg_a1', 'repvgg_a2', 'shufflenetv2_x0_5', 'shufflenetv2_x1_0',
+    'shufflenetv2_x1_5', 'shufflenetv2_x2_0'
 ]
 
 
@@ -23,7 +26,3 @@ def test_mobilenet_v2(network_type: str, num_classes: int) -> None:
     logit = model(x)
 
     assert list(logit.shape) == [2, num_classes]
-
-    with pytest.raises(RuntimeError):
-        x = torch.rand(2, 3, 224, 224)
-        _ = model(x)
