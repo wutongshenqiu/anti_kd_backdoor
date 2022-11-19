@@ -7,5 +7,6 @@ data/*
 work_dirs/*
 gtsrb_work_dirs/*
 svhn_work_dirs/*
+flowers102_work_dirs/*
 .python-version
 .vscode/*
