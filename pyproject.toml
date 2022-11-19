@@ -24,6 +24,7 @@ timm = "^0.6.11"
 geotorch = "^0.3.0"
 torchdiffeq = "^0.2.3"
 pandas = "^1.5.1"
+scipy = "^1.9.3"
 
 
 [tool.poetry.group.dev.dependencies]

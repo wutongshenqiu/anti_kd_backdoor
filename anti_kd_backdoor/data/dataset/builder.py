@@ -21,6 +21,7 @@ from .cifar import (
     RatioPoisonLabelCIFAR100,
 )
 from .gtsrb import GTSRB, PoisonLabelGTSRB, RatioPoisonLabelGTSRB
+from .svhn import SVHN, PoisonLabelSVHN, RatioPoisonLabelSVHN
 from .types import DatasetProtocol
 
 DATASETS_MAPPING = {
@@ -42,7 +43,10 @@ DATASETS_MAPPING = {
     'RangeRatioPoisonLabelCIFAR100': RangeRatioPoisonLabelCIFAR100,
     'GTSRB': GTSRB,
     'PoisonLabelGTSRB': PoisonLabelGTSRB,
-    'RatioPoisonLabelGTSRB': RatioPoisonLabelGTSRB
+    'RatioPoisonLabelGTSRB': RatioPoisonLabelGTSRB,
+    'SVHN': SVHN,
+    'PoisonLabelSVHN': PoisonLabelSVHN,
+    'RatioPoisonLabelSVHN': RatioPoisonLabelSVHN
 }
 
 
