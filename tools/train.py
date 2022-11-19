@@ -51,3 +51,6 @@ if __name__ == '__main__':
 
     trainer = build_trainer(trainer_config)
     trainer.train()
+
+    # empty pined memory
+    torch.cuda.empty_cache()
