@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from torchvision.datasets import CIFAR10, CIFAR100, GTSRB
+from torchvision.datasets import CIFAR10, CIFAR100, GTSRB, SVHN
 
 DATA_ROOT: Path = Path('data')
 
@@ -61,6 +61,24 @@ def download_gtsrb() -> dict:
                 ])
 
 
+def download_svhn() -> dict:
+    SVHN(root=DATA_ROOT / 'svhn', download=True, split='train')
+    SVHN(root=DATA_ROOT / 'svhn', download=True, split='test')
+    SVHN(root=DATA_ROOT / 'svhn', download=True, split='extra')
+
+    train_path = DATA_ROOT / 'svhn' / 'train_32x32.mat'
+    test_images_path = DATA_ROOT / 'svhn' / 'test_32x32.mat'
+    test_gt_path = DATA_ROOT / 'svhn' / 'extra_32x32.mat'
+
+    return dict(name='svhn',
+                train=dict(path=train_path.as_posix(),
+                           sha256=cal_file_sha256(train_path)),
+                test=dict(path=test_images_path.as_posix(),
+                          sha256=cal_file_sha256(test_images_path)),
+                extra=dict(path=test_gt_path.as_posix(),
+                           sha256=cal_file_sha256(test_gt_path)))
+
+
 if __name__ == '__main__':
     import json
 
@@ -68,6 +86,7 @@ if __name__ == '__main__':
     meta_dict.append(download_cifar10())
     meta_dict.append(download_cifar100())
     meta_dict.append(download_gtsrb())
+    meta_dict.append(download_svhn())
 
     with open(DATA_ROOT / 'meta.json', 'w', encoding='utf8') as f:
         f.write(json.dumps(meta_dict))
