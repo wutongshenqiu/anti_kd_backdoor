@@ -17,11 +17,11 @@ class SVHN(TORCH_SVHN, DatasetInterface):
         assert len(x) == len(y)
 
         self.data = np.stack(x, axis=0)
-        self.targets = np.stack(y, axis=0)
+        self.labels = np.stack(y, axis=0)
 
     @property
     def num_classes(self) -> int:
-        return len(set(self.targets))
+        return len(set(self.labels))
 
     @property
     def raw_num_classes(self) -> int:
