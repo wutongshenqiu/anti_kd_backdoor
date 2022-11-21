@@ -6,10 +6,6 @@ from torch.nn.utils import prune
 
 def ln_pruning(model: nn.Module, *, pruning_ratio: float, n: int,
                dim: int) -> nn.Module:
-    if pruning_ratio <= 0:
-        print(f'Pruning for ratio `{pruning_ratio}` will be ignored')
-        return model
-
     model = copy.deepcopy(model)
 
     parameters_to_prune = []
