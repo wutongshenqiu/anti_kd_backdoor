@@ -1,6 +1,7 @@
 import copy
 
 import torch
+import torchvision
 from torch.nn import Module
 
 from . import chenyaofo_cifar_models, cifar, trigger
@@ -8,7 +9,8 @@ from . import chenyaofo_cifar_models, cifar, trigger
 _ARCH_MAPPING = {
     'cifar': cifar,
     'trigger': trigger,
-    'chenyaofo_cifar_models': chenyaofo_cifar_models
+    'chenyaofo_cifar_models': chenyaofo_cifar_models,
+    'torchvision': torchvision.models
 }
 
 

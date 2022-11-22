@@ -1,7 +1,11 @@
 import copy
+import functools
 import inspect
 from types import FrameType
 from typing import Any, Iterable, Optional
+
+from torch import Tensor
+from torch.nn import Module
 
 
 def collect_hyperparameters(
@@ -33,3 +37,20 @@ def collect_hyperparameters(
         hp[k] = copy.deepcopy(v)
 
     return hp
+
+
+def get_module_by_name(base_module: Tensor | Module,
+                       access_string: str) -> Tensor | Module:
+    if access_string == '':
+        return Module
+
+    names = access_string.split(sep='.')
+    return functools.reduce(getattr, names, base_module)
+
+
+def get_parent_module_name(s: str) -> str:
+    s_module_list = s.split('.')
+    if len(s_module_list) == 1:
+        return ''
+
+    return '.'.join(s_module_list[:-1])

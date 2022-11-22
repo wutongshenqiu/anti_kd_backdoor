@@ -1,9 +1,11 @@
 from .anti_kd import AntiKDTrainer
+from .finetune import FinetuneTrainer
 from .normal import NormalTrainer
 
 TRAINERS_MAPPING = {
     'AntiKDTrainer': AntiKDTrainer,
-    'NormalTrainer': NormalTrainer
+    'NormalTrainer': NormalTrainer,
+    'FinetuneTrainer': FinetuneTrainer
 }
 
 
