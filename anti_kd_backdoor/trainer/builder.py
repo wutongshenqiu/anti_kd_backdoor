@@ -1,11 +1,13 @@
 from .anti_kd import AntiKDTrainer
 from .finetune import FinetuneTrainer
+from .nad import NADlTrainer
 from .normal import NormalTrainer
 
 TRAINERS_MAPPING = {
     'AntiKDTrainer': AntiKDTrainer,
     'NormalTrainer': NormalTrainer,
-    'FinetuneTrainer': FinetuneTrainer
+    'FinetuneTrainer': FinetuneTrainer,
+    'NADlTrainer': NADlTrainer
 }
 
 
