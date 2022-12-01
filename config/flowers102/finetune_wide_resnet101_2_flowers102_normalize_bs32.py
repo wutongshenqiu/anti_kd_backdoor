@@ -13,7 +13,7 @@ trainer = dict(
     type='FinetuneTrainer',
     network=dict(
         network=dict(arch='torchvision',
-                     type='resnet50',
+                     type='wide_resnet101_2',
                      weights='DEFAULT',
                      progress=True),
         optimizer=dict(type='SGD', lr=lr, momentum=0.9, weight_decay=1e-5),

@@ -4,9 +4,14 @@ __pycache__
 .venv/*
 data/*
 !data/meta.json
-work_dirs/*
-gtsrb_work_dirs/*
-svhn_work_dirs/*
 flowers102_work_dirs/*
 .python-version
 .vscode/*
+
+# work dirs
+/work_dirs
+/svhn_work_dirs
+/gtsrb_work_dirs
+/flowers102_work_dirs
+/cifar10_work_dirs
+/cifar100_work_dirs

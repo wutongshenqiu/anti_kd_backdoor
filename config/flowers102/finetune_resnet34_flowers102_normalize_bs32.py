@@ -13,14 +13,14 @@ trainer = dict(
     type='FinetuneTrainer',
     network=dict(
         network=dict(arch='torchvision',
-                     type='resnet50',
+                     type='resnet34',
                      weights='DEFAULT',
                      progress=True),
         optimizer=dict(type='SGD', lr=lr, momentum=0.9, weight_decay=1e-5),
         scheduler=dict(type='CosineAnnealingLR', T_max=max_epochs),
         finetune=dict(training=True, trainable_modules=['fc']),
         mapping=dict(
-            fc=dict(type='Linear', in_features=2048, out_features=102))),
+            fc=dict(type='Linear', in_features=512, out_features=102))),
     train_dataloader=dict(dataset=dict(type=dataest_type,
                                        root='data',
                                        split='train',
